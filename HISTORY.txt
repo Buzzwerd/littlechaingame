@@ -1,0 +1,559 @@
+little vibe game:
+
+Let’s make an html file web game. Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks.
+
+Let’s start with a little prototype:
+
+v0.01
+
+[Technical specifications]
+Square canvas
+Fullscreen enable = keystroke F
+
+[Controls]
+Mouse controls only.
+
+Mouse pointer to move.
+
+[Game description]
+Top down immersive simulation game. You are a little guy chained to a post. You start chained by 5 links - you can barely move. Just inside of your range of movement is a coin, and outside of your range of movement are many other coins. You must collect the coin and bring it back to your post to extend your chain by 1. This will allow you to collect another coin- and so on. This is the basic core loop and the foundation for the rest of the game.
+
+[Additional details]
+The player character should be shown carrying the coin, and move slower when they have the coin. The player picks up the coin automatically when their avatar touches it.
+
+Use inverse kinematics for the chain if possible.
+
+[CCC]
+The player avatar always moves toward the mouse cursor position and goes slightly off center of the camera depending on the direction they are moving towards.
+
+__
+
+Let’s continue. Remember: Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks. We’re now on:
+
+v0.06
+
+[Power ups]
+When the player first collects 10 coins (after the first time it becomes 20, then 40, and continues to double in price each time)- the player will have the chance to choose an ability that adjusts their parameters or introduces a new gameplay paradigm.
+
+[Menu Design]
+The menu should be minimal and easy to read. There will be 4 choices every time. The player selects by pressing an arrow key, and the layout of the options should reflect this. Each direction represents a tree of skills. Generate 25 skills for each tree, number each skill so we can easily adjust the tree.
+
+List of Abilities:
+[Up]
+Up abilities involve player movement speed.
+[Down]
+Down abilities involve player carrying speed.
+[Left]
+Left abilities involve player carrying capacity.
+[Right]
+Right abilities involve map visibility. (Let’s replace the automatic zoom out, and make it so this branch of power ups increases view range and other parameters related to the camera)
+
+__
+
+Let’s continue. Remember: Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks. We’re now on:
+
+v0.08
+
+This update will introduce non-player characters that can talk to the player. They look like the player (a black circle). NPC’s are not placed randomly- They are always in the same spot no matter the play through. NPC’s will replace the current upgrade menu. Instead, NPC’s will provide the player with items to carry back to their post for those enhancements. Some NPC’s require coins before they’ll give the player the item. We will be adding many NPC’s and they will be part of the core mechanic of the game and the primary objectives will all circle around them.
+
+[NPC Dialogue Box]
+Dialogue box for non player characters strewn across the map - A black box at the bottom of the screen with dialogue that appears when you approach an npc and wait 3 seconds next to them (display wait bar as a circle loading bar above the NPC- black with white outlines and white fill). Players will occasionally have yes or no choices. Up is yes, down is no. Dialogue is advanced using the left and right arrow keys. Show 3 sentences per screen of dialogue.
+
+[NPC List]
+
+Most NPC’s are far from the starting point.
+
+	0.	Gary, Location: south of the starting point, closest NPC, Dialogue: “Man… I dropped all these coins, but I’m too lazy to pick them up. I saw you already take some so I guess… you can have them if you want. Dang.
+	0.	Wes, Location: north of the starting point, far enough that you don’t see him before you have 30 chain links, dialogue “Nice chain! I’ve got this diamond I don’t need, you should have it!” - the player gets to choose if they want to take it, yes or no. If they take it, represented as a black coin with a white outline to whatever the player is already carrying - it is worth 10 coins and slows the player that much too. If they player is at max capacity change the dialogue to say “I’d give you this sweet diamond, but it looks like you’ve got your hands full.”
+	0.	Populate the world with an additional 10 NPC’s - give them random names and silly irreverent dialogue, we’ll edit it later. These NPC’s should give the player tokens to take back to the post that will give them special abilities like the ones we had in our upgrade menu before. When these special items are deposited freeze the game and display text that shows the ability you just received with the same 5 second timer from the upgrade menu we’ve removed.
+	0.	Add an NPC that gives the player a “home beacon” in exchange for 10 coins. The dialogue box should end up in a state where it is “Bring me (this many) coins and I’ll give a cool tool fool.” The player must take the home beacon back to their post. Once they do, they will get a small dot at the edge of the screen that always points at the post.
+
+[Visual update]
+
+Let’s add a faint widespread grid on dots on the ground so the player can see when they are moving. 
+
+[Music]
+
+Let’s add the track littlechainsong.wav from our game folder and play it on loop.
+
+[SFX]
+Use the sounds in the sfx folder.
+
+Pick up coin - randomize between, pickup_00.wav, pickup_01.wav, pickup_02.wav
+Receive an item from NPC - received-gift_soundimpact.wav
+While moving - draggingsmallchain.wav
+After depositing a coin - pull-chain-02.wav
+After depositing an NPC item - deposit_special.wav
+
+[Other updates]
+
+Slow down the player for each coin they are carrying, not just one. Post should fade animate from white to black instead of using alpha so that you can’t see the chain behind it. Remove number from post and size change- no longer needed because upgrades are obtained from NPC’s.
+
+
+v0.10
+
+NPC Item Visual: change to a black circle like the diamond for ALL NPC items.
+NPC Dialogue change: if the player is at capacity for item carrying - change dialogue to “Looks like you have you hands full, and I had cool stuff for you too. Darn.”.
+Background dot grid: A little bit more dense.
+
+Updated NPC List (Name, cost):
+
+  NPC List (13 Total)
+
+  1. Gary
+  - Location: (0, 400) - South of spawn, closest NPC
+  - Item: None (just talks about coins)
+  - Cost: Free
+
+  2. Wes
+  - Location: (0, -800) - North of spawn
+  - Item: Diamond (worth 10 coins, weighs 10)
+  - Cost: Free (yes/no choice)
+
+  3.Sam
+  - Location: (-600, -600) - Northwest
+  - Item: Speed Medallion
+  - Ability: Speed Boost (+40% move speed)
+  - Cost: 3 coins (must bring coins to purchase)
+
+  4.Chris
+  - Location: (600, -600) - Northeast
+  - Item: Hauler's Pack
+  - Ability: Carry Capacity +10
+  - Cost: Free
+
+  5.Zoe
+  - Location: (-800, 0) - West
+  - Item: Eagle Eye Charm
+  - Ability: Zoom Out 30% (actually +60% to modifier)
+  - Cost: 3 coins (must bring coins to purchase)
+
+  6.Mary
+  - Location: (800, 0) - East
+  - Item: Coin Magnet
+  - Ability: Pickup Range +100%
+  - Cost: 10 coins (must bring coins to purchase)
+
+  7. Rocket Ron
+  - Location: (-600, 600) - Southwest
+  - Item: Turbo Boost Token
+  - Ability: Turbo Speed +50%
+  - Cost: 5 coins (must bring coins to purchase)
+
+  8.Bob
+  - Location: (600, 600) - Southeast
+  - Item: Weight Relief Ring
+  - Ability: Carry Penalty -50%
+  - Cost: 3 coins (must bring coins to purchase)
+
+  9.Sally
+  - Location: (-400, -900) - Far North-Northwest
+  - Item: Quick Start Module
+  - Ability: Acceleration +40%
+  - Cost: 5 coins (must bring coins to purchase)
+
+  10. Hank
+  - Location: (400, -900) - Far North-Northeast
+  - Item: Mega Pouch
+  - Ability: Carry Capacity +15
+  - Cost: Free
+
+  11.Cal
+  - Location: (-900, -400) - Far Northwest
+  - Item: Stabilizer
+  - Ability: Camera Stability (removes camera offset)
+  - Cost: Free
+
+  12.Eddie
+  - Location: (900, 400) - Far Southeast
+  - Item: Adrenaline Charm
+  - Ability: Carry Speed Bonus +30%
+  - Cost: 6 coins (must bring coins to purchase)
+
+  13.Betty
+  - Location: (-700, 700) - Far Southwest
+  - Item: Home Beacon (shows direction to post)
+  - Cost: 10 coins (must bring coins to purchase)
+
+Gameplay change:
+Let’s try adding a mechanic where pressing left and right at the same time lets you drop the last thing you picked up. Place it in a random location near the player (so that they dont overlap when you drop many).
+
+V.11
+
+After saying yes to Wes, we don’t need to see the dialogue again. Just go back to gameplay.
+
+Stop the NPC timer when the NPC is off screen.
+
+Let’s build out how paying NPC’s works. The NPC should ask yes or no. Once the player selects yes, the NPC will receive coins from them. Their dialogue will reflect how many coins are left before they give you the item. 
+
+V.14
+
+Make NPC white if player has had dialogue with them.
+
+__
+
+Let’s continue. Remember: Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks. We’re now on:
+
+V.15
+Tint NPC white after player has received an item from them or exhausted their dialogue.
+Make sure NPC doesn’t change size when they turn white.
+NPC that can receive coins should blink white until they receive all the coins.
+Betty doesn’t give the player the item after she receives 10 coins.
+Play sfx when players give NPC’s coins.
+Display the NPC name at the bottom of the screen when the player enters their radius.
+Blink the starting post when the player is carrying NPC items too.
+
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks. We’re now on:
+
+V.18
+[Diagetic music update]
+
+Overview
+	⁃	Remove default music
+	⁃	Replace with NPC based music
+	⁃	Once music is unlocked by your first disk, it plays from your starting post and gets quieter as you move away from it.
+
+[Music System]
+Music loudness is correlated to the distance of the player from a predefined point. It begins at -38db and smoothly increases or decreases based on the players distance from the point with a max of 0db when the player is right next to the point. Musical points will be added and play different specific tracks over the course of the game. To start, all music points will have the same range.
+
+Find music tracks in the music folder.
+
+First Music NPC:
+George: George gives the player the Chill Tune Disk.
+
+You can find George far North from the starting point. Music [chilltune.wav] is playing from his location.
+
+[Initial progression]
+The George NPC is the first musical point. The player receives the Chill Tune Disk from George. Taking it to the starting post adds a music point to the starting post location and begins playing [chilltune.wav] from that location.
+
+[Future considerations]
+Once the player has collected more than 1 music disk item, we’ll want a way to navigate between disks from the starting post. Let’s use the same system as the dialogue - you stand next to the starting post for 3 seconds to open the track selection dialogue and then use up and down keys to swap between “disks”. Some disks will contain more than one song.
+
+[Additional changes]
+Players should be able to put down NPC items the same way they can with coins. They should never be destroyed.
+
+v0.21
+
+Expand the range of the music point for the starting post to 5000.
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks. We’re now on:
+
+v0.25
+
+[Auto-save]
+
+Let’s add a system to save game progress. It should be simple, automatic, seamless, and invisible to the player. The game will save any time something is deposited at the starting post.
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks. We’re now on:
+
+v0.27
+
+[New NPC]
+
+Location (1000,1000)
+
+Straum says, “Ho… Someone dropped their coins… so many coins! I picked them all up! It was fun! I don’t need em’ though, since I don’t have a Chain anymore… so… do you want em’?” [Select yes or no]
+Yes: “Here little bud, all you can carry.” No: Ah, gotcha. I see you.
+
+If the player says yes, Straum will give the player coins equal to the amount of coins they are carrying - their max carrying capacity.
+
+Straums inventory of coins is limited to 99 and does not refill.
+
+When Straum gives away his 99th coin his dialogue will change. Straum says “That’s all of em’. I also found this diamond. Do you want it? [Select yes or no] Yes: “Here you go, bud.” No: “Oh, is it too heavy for you, bud?”
+
+If the player selects yes, the player will receive a Diamond.
+
+Completed Dialogue: “You know, I still feel like I have a Chain just like you. Isn’t that weird, bud?”
+
+Additional Dialogue Rule: If the player drops a coin after taking a coin from Straum - he will acknowledge it the next time the player talks to him: “Hey, if you’re gonna be throwing em’ coins back on the ground, I might as well keep em’.” He will then go back to his normal dialogue.
+
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks. We’re now on:
+
+v.028
+
+[Walls]
+
+Implement a system of barriers. Create a barrier at (0,500) The barrier should be a black box with a white outline.
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks. We’re now on:
+
+v0.29
+
+Let’s implement a way to switch between music disks. Keep it simple. Holding up and down arrow keys for 500ms will switch to the next disk. Remember, disks can contain more than one track and repeat after all the tracks have played. This will cycle through all the disks the player has collected so far - order of the disks doesn’t matter that much, just keep it easy to implement.  Additionally, make it so that the last “disk” is just “Silence- nothing plays”. For example, if you only have the Chill Tune Disk, holding up and down will turn of the music. Pressing up and down again will play chill tune disk. If the player has multiple disks, the silence is always the last disk. For example, if the player has Chill Tune Disk and Going Places and Chill tune disk is playing - pressing up and down would switch to Going Places > then if they press it again, it would switch to silence> then if they press it again, it’d cycle back to Chill Tune Disk.
+
+When the game first loads, it should remember what disk was playing and play that disk from the beginning.
+
+__
+
+Let’s continue with a new version, this is a big update. Remember: Maintain the scope of the prompts - low creativity. Ask many questions to fill in the blanks. We’re now on:
+
+v0.30
+
+[Jobs]
+
+Far north at (200,-2500) There is an NPC named Chaff. He says “Hey there, looks like you’re making good progress on your Chain. You won’t always just find coins on the ground though. Most people on the Chain have to get proper jobs. Not a lot of options though. You can either go west of here to find the sorting grounds, or you can go east to the courier service depot. Just don’t go getting fired.
+
+Chaff only has that dialogue and no other special characteristics, at the moment.
+
+[Sorting Grounds]
+
+Location: (-2000,-2500)
+
+The sorting grounds is indicated by a dense patch of background dots (500x500)
+
+Near the center of the sorting grounds is the NPC Wheaton. He says “Hey, a chain like that takes discipline. Ever think about getting into sorting? I need the help and I’ve got the coin… well coins… lots of them. Want a job as a sorter?” [Yes and no type of dialogue]
+
+[No] “Well, the position is open… come back if you change your mind.”
+
+[Yes] “Excellent. Hmm.. but you don’t have the proper job-having equipment. You’ll need to go to Tim and get yourself a job equipment token. His last post was pretty far Southeast of here. He was sent out to help out the newest member of the world.
+
+[Courier Service Depot]
+
+Location: (2100,-2400)
+
+The sorting grounds is indicated by a dense patch of background dots (600x400)
+
+Near the center of the sorting grounds is the NPC Weadon. He says “Hey, looks like you’re getting a good start on that Chain eh. You must be used to traveling. I need some help with this courier biz. Want a job in the delivery service?” [Yes and no type of dialogue]
+
+[No] “Hey! Jobs aren’t always going to be available… don’t complain if we find someone else.”
+
+[Yes] “Excellent. Hmm.. but you don’t have the proper job-having equipment. You’ll need to go to Tim and get yourself a job equipment token. His last post was pretty far Southeast of here. He was sent out to help out the newest member of the world.
+
+[Tim]
+Tim is an existing NPC - he is the first NPC the player can talk to. After talking to either Weadon or Wheaton Tim’s dialogue is updated. Now Tim will say “Hey, you’re back! Oh… a job! Of course, I should’ve given this to you before!” Now Tim will give the player the work tools.
+
+[Work Tools Item]
+
+The work tools item is just like any other NPC item - it needs to be deposited at the starting post to gain the ability.
+
+[How it works]
+The work tools token adds two UI elements to the HUD. A clock with the actual current time - autodetect geolocation and set time zone. A sun and a moon icon indicator that shows whether it is day or night at the time. Place this at the top center of the screen so that it matches the other existing UI elements. The work tools also adds the x,y coordinates (at the moment, the x, y coordinates are on by default, let’s make it so they only show up if you have the work tools instead.)
+
+[Debugging - keypress 9 toggles work tools token ability.]
+
+[Tim]
+Completion Dialogue: “Good luck! Chain is looking great by the way, at this rate you’ll be done in no time… though I’d enjoy it while it lasts!”
+
+The dialogue for Weadon and Wheaton get updated now.
+
+Weadon:
+“Great. Let me explain this courier biz. I’m gonna give you a package. You take it to the whoever it belongs. That’s the biz.” Weadon Gives the player a “Package”.
+
+Weadon’s dialogue now reads “You have until [Use the actual time here + 10] to do the biz. The package is for [insert NPC].”
+
+The Package: packages are items that need to be delivered to specific NPC’s. They are different than other NPC items in appearance - they are black squares with a white outline, the same size as the coins. they CANNOT be deposited to the starting post. They can only be delivered to who they belong to. Packages vary in weight.
+
+The first package Weadon gives the player needs to be delivered to the NPC Eddie. It weighs the same as 5 coins.
+
+Eddie will now blink and receive the package similarly to when NPC’s receive coins for payment. This will not affect his dialogue.
+
+[Procedural courier game/job]
+After the first package- When the player talks to Weadon he will give them another package. The owner of the package is a random NPC that exists in the world. Every NPC will need a state for “Receiving package” so they can be targeted by this selection and blink and receive accordingly. Exclude Weadon himself from receiving a package. The weight of the package is randomly assigned from 5-10.
+
+The player can do 3 deliveries a day starting at 8am local time. Then Weadon will stop giving packages.
+
+After the player does 3 packages Weadon’s dialogue is updated.
+“Three is all we need. Three a day. That’s the biz. You’ll get the coins straight to your Chain.”
+
+Wheaton:
+“Sortin’s pretty easy. All you have to do is use your chain to sort the farm animals. You’ll find them a little west of here at the farm.”
+
+The Farm (-3000,-3000) is indicated by a large patch of dense background dots (1000x1000)
+
+[Sorting Mechanics]
+
+On the farm are groups of animal NPC’s. They are represented by both black and white triangles. These triangles can be moved by the players chain.
+
+The Farm contains groups of these triangles huddled in small groups of 5-8. The players job is to separate the white triangles from the black triangles by splitting their groups up with their chain. The task is complete when there is no black triangle within 100px of a white triangle. When the task is complete all the triangles will disappear. The triangles reset at 6pm every day.
+
+After the task is completed Wheaton’s dialogue is updated
+“Good. Now your job is make sure each shipment of animals gets sorted every day. The shipments come in at 6pm (real time) once a day.” “Your pay will be automatically deposited to your chain every 5 minutes.”
+
+[Job Payment]
+
+Courier Payment:
+The player will receive a passive 1 coin per 5 minutes as long as they are playing the game for each job they have agreed to do. (Play the coin received sound and display “Courier payment received!” Payment begins after the player completes their first job task.
+
+Sorter Payment:
+The player will receive 10 coins immediately after separating the triangles.(Play the coin received sound and display “Sorter payment received!” Payment begins after the player completes their first job task.
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask many questions to fill in the blanks. We’re now on:
+
+v0.33
+
+Let’s redo the Wheaton NPC and change the job he gives you. First, it is no longer the sorter job, it is now the animal retrieval job. The animal NPC’s now follow the player when they get close enough to the animal NPC. The animal NPC’s will always follow the player (10 can follow at a time) until they are close enough to Wheaton. When an animal is close enough (within 200px) to Wheaton, it will turn into a coin. This only happens if the player has accepted the job from Wheaton and has the work tools.
+
+Animal NPC Parameters:
+Speed: .5
+Radius for follow: 12
+Visual: Every Animal NPC is rendered as a small black triangle. Remove variations.
+Placement: Place 50 animals anywhere from (-1000, -2500) to (1000, -3000)
+
+The player’s job is to bring the animal NPC’s back to the area near Wheaton. Each animal NPC will change into a coin when it enters Wheaton’s collection perimeter.
+
+If all 50 Animal NPCs are turned into coins - Wheaton will have a new dialogue: “Good work. Looks like you got them all for today. We’ll start again tomorrow.”
+
+If it’s past 6pm, reset the animal NPC count and place 50 new animal NPC’s on the map. This resets once a day.
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask many questions to fill in the blanks. We’re now on:
+
+v0.36
+
+Let’s add a new kind of NPC.
+
+Location: (3033, -49)
+Name: Pin
+
+Special NPC Type: Chained NPC- Pin is an NPC, but he has a post and chain, the same as the player. Pin starts with 5 links. Chained NPC’s will move toward the closest coin around them. They are able to pick up coins (the same coins players pick up). They will take the coins back to their post and their chain will grow. Then they will continue looking for coins. These NPC’s will stop moving when the player enters their radius so that they can talk to them.
+
+Initial Dialogue:
+
+Dialogue: “Wow… your chain is so long… and mine… well… my post isn’t near any coins… and nobody is around to help…”
+
+Pin’s dialogue will change depending on how long his chain is:
+
+[10 links]
+“Look how long my chain is getting!”
+
+[20 links]
+“I can’t believe I’ll finally get out into the world.”
+
+[50 links]
+“At this rate, I’ll be as long as you soon!”
+
+[100 links]
+Completed: “Hey, I’ve come a long way and I know it’s not a lot, but here you go!” Pin gives the player a diamond.
+
+[Gameplay description]
+
+Given how the mechanics of this NPC works, the player should technically be able to drop a coin near Pin and he should be able to pick it up and grow. If the player brings Pin enough coins, he will continue to see the additional dialogue. 
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask many questions to fill in the blanks. We’re now on:
+
+v0.37
+
+Let’s fix an issue where if a coin is being held off screen, it won’t render when the player drops it. This breaks the coin dropping system.
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask many questions to fill in the blanks. We’re now on:
+
+v0.38
+
+New Music NPC (Look at Fritz for reference)
+Location (-2000,-600)
+Name: Jean
+Sells the player a disk for 3 coins
+Disk Name: GAMBLIN MAN
+Disk location: /music/GAMBLIN MAN
+Track count: 1
+
+Dialogue: Generate all - irreverent, silly, fourth wall breaking.
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask many questions to fill in the blanks. We’re now on:
+
+v0.39
+
+Three new NPCs.
+
+This should be simple. We are essentially making copies of Zoe, Bob, and Ron - but they are further out on the map and more expensive. Choose spread out locations, Generate names and dialogue for them - irreverent, silly, fourth wall breaking.
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We’re now on:
+
+v0.40
+
+A new music NPC
+
+Location: (4500,-60)
+Name: Klaus
+This NPC is exactly the same as George with one exception - he won’t give the player a Disk until Pin has 50 links. He has a musicPoint with a range of 1000.
+Disk Name: Cache Full Disk
+Dialogue when Pin has less than 50 links: Generate - irreverent, silly, loves house music.
+Dialogue when Pin has 50 links or more- Hey, I heard you’ve been helping my buddy Pin. Ever since Pin showed up, I’m not alone anymore. It’s nice having company. You can have this Disk, I don’t need it anymore.”
+Music directory: music/CacheFull/
+Use the files from this directory to create the track list- there are 9 tracks on this Disk.
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We’re now on:
+
+v0.41
+
+Familiarize with animal NPC’s
+
+Improve following behavior. It’s currently a little jumpy when they move faster than the player and the animals fall behind when they are slower than the player.
+
+__
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We’re now on:
+v0.43
+
+Get familiar with the background system. The main background is wide spread dots. There are also 3 patches of dense dots to indicate certain areas. What other ways can we differentiate the background and create landmarks for the player. Everything should stay black and white, minimal, and stylish. Can we implement lines of grass that rotate as the players moves over them, or puddles of water that create ripples (white circles that expand outward and fade out)? What else could we do? These would be purely visual toys and should not have an effect on gameplay.
+
+__
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We’re now on:
+
+v0.44
+
+A New NPC with a new Ability item
+
+Name: Quincy
+Location: (-2599, -2129)
+Payment: 15 Coins
+Item: Quincy gives the player the Max Fulfillment Coin.
+Item ability description: When the player fills their max weight capacity, their avatar begins to blink and they receive a weight capacity boost of 100%.
+Dialogue: Generate -irreverent, silly, fourth wall breaking.
+
+_
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We’re now on:
+
+v0.45
+
+Another new music NPC
+
+Location: (-4500,-4060)
+Name: Noodles
+This NPC is exactly the same as Klaus with one exception - he won’t give the player a Disk unless his chain is 750 links long. He has a musicPoint with a range of 3000.
+Disk Name: BUDSbeats
+Dialogue when player has less than 750 links: Generate - sarcastic, logical, 4th wall breaking
+Dialogue when players has 750 links or more- Generate- you’ve earned his respect.
+Music directory: music/BUDSbeats/
+Use the files from this directory to create the track list- there are 12 tracks on this Disk.
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We’re now on:
+
+v0.46
+
+New NPC
+
+ 1. Name: Clint
+  2. Location: (5000, 400 coordinates)
+  3. What do they offer: Nothing initially
+  4. Cost/Requirement: No cost, yes or no question
+  5. Dialogue tone/personality:Sad, nihilist, lonely, wants to go home.
+  6. Any special mechanics: Clint will ask the player if he can follow them. If the player says yes, Clint will follow the player. His following behavior is similar to the animal NPC’s - only he follows off to the side instead of behind. He will not talk to the player while he is following them. We'll expand Clint in the future.
+
+__
+
+Let’s continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We’re now on:
+
+v0.47
