@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chain Game v0.47</title>
+    <title>Chain Game v0.51</title>
     <style>
         body {
             margin: 0;
@@ -55,6 +55,8 @@
             hasWorkTools: false,
             hasMaxFulfillmentCoin: false,
             maxFulfillmentBoostActive: false,
+            hasAirOfConfidence: false,
+            userHasInteracted: false, // Prevents music until player presses arrow key
             nearbyNpc: null,
             keys: {
                 ArrowUp: false,
@@ -97,6 +99,7 @@
             choiceResult: null,
             showingDeclinedDialogue: false, // Track if showing declined dialogue after "no"
             showingNeedsWorkTools: false, // Track if showing needs work tools dialogue
+            showingNoDiamondDialogue: false, // Track if showing Ram's no diamond dialogue
             lastNpc: null, // Track which NPC was just talked to
             cooldownTimer: 0
         };
@@ -146,9 +149,9 @@
             // Set up sequential playback for multi-track disks
             audioTracks.forEach((audio, index) => {
                 audio.addEventListener('ended', () => {
-                    // Play next track, or loop back to first
+                    // Play next track, or loop back to first (only after user interaction)
                     const nextIndex = (index + 1) % audioTracks.length;
-                    if (musicPoint.started && musicPoint.currentVolume > 0) {
+                    if (musicPoint.started && musicPoint.currentVolume > 0 && game.userHasInteracted) {
                         musicPoint.currentTrackIndex = nextIndex;
                         audioTracks[nextIndex].currentTime = 0;
                         audioTracks[nextIndex].play().catch(e => console.log('Music play failed:', e));
@@ -181,8 +184,8 @@
                     audio.volume = point.currentVolume;
                 });
 
-                // Start playing first track if not started and volume > 0
-                if (!point.started && point.currentVolume > 0) {
+                // Start playing first track if not started and volume > 0 (only after user interaction)
+                if (!point.started && point.currentVolume > 0 && game.userHasInteracted) {
                     point.audioTracks[0].play().catch(e => console.log('Music play failed:', e));
                     point.started = true;
                 }
@@ -257,27 +260,16 @@
                 const dropX = player.x + Math.cos(angle) * distance;
                 const dropY = player.y + Math.sin(angle) * distance;
 
-                // Convert item back to appropriate type
-                if (droppedItem.type === 'diamond') {
-                    coins.push({
-                        x: dropX,
-                        y: dropY,
-                        radius: 8,
-                        color: '#fff',
-                        collected: false
-                    });
-                } else {
-                    // Ability items, home beacon, and music disks are placed on ground
-                    droppedItems.push({
-                        x: dropX,
-                        y: dropY,
-                        radius: 8,
-                        color: '#000',
-                        outlineColor: '#fff',
-                        collected: false,
-                        item: droppedItem
-                    });
-                }
+                // Place item on ground (preserving all properties)
+                droppedItems.push({
+                    x: dropX,
+                    y: dropY,
+                    radius: 8,
+                    color: '#000',
+                    outlineColor: '#fff',
+                    collected: false,
+                    item: droppedItem
+                });
             } else if (player.carryingCoins.length > 0) {
                 const droppedCoin = player.carryingCoins.pop();
 
@@ -372,7 +364,7 @@
                 dialogue: [
                     ["Hey there! Just got here, huh?", "Look... just stay out of trouble.", "But if thing's get heavy..."],
                     ["Press Left and Right arrows at the same time", "to drop the last item you picked up.", "Simple, right?"],
-                    ["Here, take this Ish.", "It'll help you carry more stuff.", "Good luck out there!"]
+                    ["Here, take this Ish.", "It'll help you carry more stuff,", "once you deposit it."]
                 ],
                 workToolsDialogue: [
                     ["Hey, you're back! Oh… a job!", "Of course, I should've given this to you before!"]
@@ -384,7 +376,7 @@
                     ["Hey, are you new?,", "I can help you out.", "Come back when your hands aren't full."]
                 ],
                 completedDialogue: [
-                    ["Remember: Left+Right to drop extra weight!", "Who's really in control anyways?"]
+                    ["Remember: Left+Right to drop extra weight!", "Sometimes we have to let go."]
                 ],
                 itemGiven: false,
                 hasCompletedQuest: false,
@@ -486,10 +478,10 @@
                     ["It'll let you hold way more stuff.", "Carry on!"]
                 ],
                 fullDialogue: [
-                    ["Looks like you have your hands full,", "and I had cool stuff for you too.", "Butts."]
+                    ["Looks like you have your hands full,", "and I had rad stuff for you too.", "Butts."]
                 ],
                 completedDialogue: [
-                    ["I miss when I had a chain.", "Now I got nothin' to do!"]
+                    ["I miss when I had a Chain.", "Now I got nothin' to do!"]
                 ],
                 itemGiven: false,
                 hasCompletedQuest: false,
@@ -599,8 +591,8 @@
             },
             {
                 name: 'Bob',
-                x: 400,
-                y: 350,
+                x: 4,
+                y: 550,
                 radius: 12,
                 color: '#000',
                 outlineColor: '#fff',
@@ -867,7 +859,7 @@
                 color: '#000',
                 outlineColor: '#fff',
                 dialogue: [
-                    ["So uh… funny story.", "I've got this sick music disk,", "and normally I'd give it away but…"],
+                    ["So uh… funny story.", "I've got this stinkin' Disk,", "and normally I'd give it away but…"],
                     ["Gonna need 3 coins for it.", "I can't just give it away, y'know?", "Do you want it? (Up for yes, Down for no)"]
                 ],
                 collectingDialogue: [
@@ -975,7 +967,7 @@
                 outlineColor: '#fff',
                 dialogue: [
                     ["Someone dropped their coins…", "so many coins! I picked them all up!", "It was fun!"],
-                    ["I don't need em' though,", "since I don't have a Chain anymore…", "so… do you want em'?", "(Up for yes, Down for no)"]
+                    ["I don't need em' though,", "since I don't have a Chain anymore…", "so… do you want em'?"]
                 ],
                 yesDialogue: [
                     ["Here little bud, all you can carry."]
@@ -1021,7 +1013,7 @@
                     ["West for sorting, east for courier.", "Just don't go getting fired."]
                 ],
                 itemGiven: false,
-                hasCompletedQuest: true,
+                hasCompletedQuest: false,
                 requiresCoins: 0,
                 itemType: null
             },
@@ -1078,7 +1070,7 @@
                     ["Hey! Jobs aren't always going to be available…", "don't complain if we find someone else."]
                 ],
                 needsWorkToolsDialogue: [
-                    ["Excellent. Hmm.. but you don't have", "the proper job-having equipment.", "You'll need to go to Tim and get yourself a job equipment token."],
+                    ["Excellent. Hmm... but you don't have", "the proper job-having equipment.", "You'll need to go to Tim and get yourself a job equipment token."],
                     ["His last post was pretty far Southwest of here.", "He was sent out to help our newest member."]
                 ],
                 firstPackageDialogue: [
@@ -1116,13 +1108,13 @@
                     ["Yeah yeah, bring me the coins.", "I need X more.", "I'm not going anywhere. Obviously."]
                 ],
                 fullDialogue: [
-                    ["Your inventory is full.", "Classic player mistake.", "Come back when you've deposited."]
+                    ["Your inventory is full.", "Classic mistake.", "Come back when you've deposited."]
                 ],
                 declinedDialogue: [
                     ["You'll be back.", "They always come back."]
                 ],
                 completedDialogue: [
-                    ["Now you can see how empty this map really is.", "You're welcome. I guess."]
+                    ["Now you can see how empty this world really is.", "You're welcome. I guess."]
                 ],
                 itemGiven: false,
                 hasCompletedQuest: false,
@@ -1176,7 +1168,7 @@
                 outlineColor: '#fff',
                 dialogue: [
                     ["Let me guess - things getting too heavy?", "Can't barely take it anymore?", "I've some That Strong Stuff."],
-                    ["6 coins. Non-negotiable.", "The developer was too lazy to make new abilities.", "(Up for yes, Down for no)"]
+                    ["6 coins. Non-negotiable.", "No funny business.", "(Up for yes, Down for no)"]
                 ],
                 collectingDialogue: [
                     ["Bring me the coins.", "X more to go.", "My coin collection grows."]
@@ -1249,7 +1241,7 @@
                     ["Really?", "...thank you.", "I'll try not to slow you down."]
                 ],
                 declinedDialogue: [
-                    ["Yeah.", "I figured.", "Nobody ever stays."]
+                    ["Yeah.", "I figured.", "I wouldn't want me either."]
                 ],
                 followingDialogue: [
                     ["..."]
@@ -1260,6 +1252,83 @@
                 isFollower: true,
                 isFollowing: false,
                 followSide: 0 // -1 for left, 1 for right, determined when following starts
+            },
+            {
+                name: 'Ram',
+                x: -1474,
+                y: 1819,
+                radius: 12,
+                color: '#000',
+                outlineColor: '#fff',
+                dialogue: [
+                    ["What do you want.", "I've got something.", "Air of Confidence."],
+                    ["Makes it so you can lead as many", "animals as you want.", "No limits."],
+                    ["Costs a diamond.", "Not the fancy one. A regular diamond.", "(Up for yes, Down for no)"]
+                ],
+                noDiamondDialogue: [
+                    ["You don't have a diamond.", "Come back when you do."]
+                ],
+                fullDialogue: [
+                    ["Hmm... that long of a chain", "and still running out of space?", "Interesting... Come back when you get rid of some of that."]
+                ],
+                declinedDialogue: [
+                    ["Whatever.", "Your loss."]
+                ],
+                completedDialogue: [
+                    ["You've got it.", "Now get out of here."]
+                ],
+                itemGiven: false,
+                hasCompletedQuest: false,
+                requiresDiamond: true, // Special flag for diamond payment
+                isCollectingDiamond: false, // Blink state when waiting for diamond
+                itemType: 'ability',
+                abilityName: 'Air of Confidence',
+                abilityEffect: () => { game.hasAirOfConfidence = true; },
+                hasChoice: true
+            },
+            {
+                name: 'Brot',
+                x: -4600,
+                y: 3400,
+                radius: 12,
+                color: '#000',
+                outlineColor: '#fff',
+                dialogue: [
+                    ["*sigh*", "Another day... another coin to collect...", "I'm so tired of this."],
+                    ["500 links on my chain and for what?", "More coins? More walking?", "I just... I don't care anymore."],
+                    ["You know what I really want?", "A pet. Something alive.", "Something that actually moves on its own."],
+                    ["If you ever find any animals out there...", "bring them to me?", "I'll make it worth your while."]
+                ],
+                oneAnimalDialogue: [
+                    ["Wait... is that... an animal?!", "A real, living, moving creature?!", "This is the best day of my entire chain life!"]
+                ],
+                fiveAnimalsDialogue: [
+                    ["Five little friends!", "They're so... wiggly.", "I love watching them waddle around."]
+                ],
+                tenAnimalsDialogue: [
+                    ["Ten animals! TEN!", "I'm practically a farmer now.", "Who needs coins when you have friends?"]
+                ],
+                twentyFiveAnimalsDialogue: [
+                    ["Twenty-five?! You're kidding me.", "I never thought I'd see so many.", "Are you some kind of animal wizard?"]
+                ],
+                fiftyAnimalsDialogue: [
+                    ["FIFTY ANIMALS!", "This is... this is everything.", "I have to give you something for this."],
+                    ["Here, take this. I found it ages ago.", "It's heavy, but it's worth a fortune.", "Thank you... truly."]
+                ],
+                completedDialogue: [
+                    ["Wow, I can't believe it...", "a real flock...", "I think I'll get back to working on my Chain now."]
+                ],
+                isChainedNPC: true,
+                targetCoinIndex: -1,
+                carryingCoin: null,
+                returningToPost: false,
+                animalsCollected: 0,
+                itemGiven: false,
+                hasCompletedQuest: false,
+                refusesToCollectCoins: true, // Won't collect coins until quest complete
+                itemType: 'diamond',
+                itemName: 'Better Diamond',
+                itemSlowAmount: 100 // Worth 100 coins, weighs 100
             }
         ];
 
@@ -1287,6 +1356,27 @@
             linkLength: 20,
             segments: []
         };
+
+        // Brot's post (for chained NPC) - positioned toward player's start
+        const brotPost = {
+            x: -3040,
+            y: -2780,
+            baseRadius: 15,
+            radius: 15,
+            color: '#fff',
+            alpha: 1.0,
+            pulseTime: 0
+        };
+
+        // Brot's chain (starts with 500 links)
+        const brotChain = {
+            links: 500,
+            linkLength: 20,
+            segments: []
+        };
+
+        // Animals that have been captured by Brot (permanent)
+        const brotAnimals = [];
 
         // Skill database
         const skills = {
@@ -1421,6 +1511,16 @@
             }
         }
 
+        function initBrotChain() {
+            brotChain.segments = [];
+            for (let i = 0; i <= brotChain.links; i++) {
+                brotChain.segments.push({
+                    x: brotPost.x,
+                    y: brotPost.y + i * 5
+                });
+            }
+        }
+
         // Coins
         const coins = [];
 
@@ -1486,6 +1586,7 @@
                 hasHomeBeacon: game.hasHomeBeacon,
                 hasWorkTools: game.hasWorkTools,
                 hasMaxFulfillmentCoin: game.hasMaxFulfillmentCoin,
+                hasAirOfConfidence: game.hasAirOfConfidence,
                 npcs: npcs.map(npc => ({
                     name: npc.name,
                     itemGiven: npc.itemGiven,
@@ -1503,6 +1604,8 @@
                     // Clint follower state
                     isFollowing: npc.isFollowing || false,
                     followSide: npc.followSide || 0,
+                    // Ram diamond collecting state
+                    isCollectingDiamond: npc.isCollectingDiamond || false,
                     x: npc.x,
                     y: npc.y
                 })),
@@ -1546,7 +1649,25 @@
                 pinChainLinks: pinChain.links,
                 pinChainSegments: pinChain.segments,
                 pinX: npcs.find(n => n.name === 'Pin')?.x || 3033,
-                pinY: npcs.find(n => n.name === 'Pin')?.y || -49
+                pinY: npcs.find(n => n.name === 'Pin')?.y || -49,
+                // Brot state
+                brotChainLinks: brotChain.links,
+                brotChainSegments: brotChain.segments,
+                brotX: npcs.find(n => n.name === 'Brot')?.x || -4600,
+                brotY: npcs.find(n => n.name === 'Brot')?.y || 3400,
+                brotAnimalsCollected: npcs.find(n => n.name === 'Brot')?.animalsCollected || 0,
+                brotAnimals: brotAnimals.map(animal => ({
+                    x: animal.x,
+                    y: animal.y,
+                    radius: animal.radius,
+                    color: animal.color,
+                    outlineColor: animal.outlineColor,
+                    inBrotZone: true,
+                    brotBehaviorState: animal.brotBehaviorState || 'idle',
+                    brotIdleTimer: animal.brotIdleTimer || 300,
+                    brotTargetX: animal.brotTargetX || animal.x,
+                    brotTargetY: animal.brotTargetY || animal.y
+                }))
             };
 
             localStorage.setItem('chainGameSave', JSON.stringify(saveData));
@@ -1579,10 +1700,11 @@
                 // Restore coins deposited
                 game.coinsDeposited = saveData.coinsDeposited;
 
-                // Restore home beacon, work tools, and max fulfillment coin
+                // Restore home beacon, work tools, max fulfillment coin, and air of confidence
                 game.hasHomeBeacon = saveData.hasHomeBeacon || false;
                 game.hasWorkTools = saveData.hasWorkTools || false;
                 game.hasMaxFulfillmentCoin = saveData.hasMaxFulfillmentCoin || false;
+                game.hasAirOfConfidence = saveData.hasAirOfConfidence || false;
 
                 // Restore NPC states
                 saveData.npcs.forEach(savedNpc => {
@@ -1622,6 +1744,10 @@
                         }
                         if (savedNpc.followSide !== undefined) {
                             npc.followSide = savedNpc.followSide;
+                        }
+                        // Restore Ram's diamond collecting state
+                        if (savedNpc.isCollectingDiamond !== undefined) {
+                            npc.isCollectingDiamond = savedNpc.isCollectingDiamond;
                         }
                         if (savedNpc.x !== undefined) {
                             npc.x = savedNpc.x;
@@ -1832,6 +1958,51 @@
                     }
                 }
 
+                // Restore Brot's state
+                if (saveData.brotChainLinks !== undefined) {
+                    brotChain.links = saveData.brotChainLinks;
+                    brotChain.segments = saveData.brotChainSegments || [];
+
+                    // Ensure segments array has correct length (links + 1)
+                    while (brotChain.segments.length < brotChain.links + 1) {
+                        brotChain.segments.push({ x: brotPost.x, y: brotPost.y });
+                    }
+                    while (brotChain.segments.length > brotChain.links + 1) {
+                        brotChain.segments.pop();
+                    }
+
+                    // Restore Brot's position
+                    const brot = npcs.find(n => n.name === 'Brot');
+                    if (brot && saveData.brotX !== undefined && saveData.brotY !== undefined) {
+                        brot.x = saveData.brotX;
+                        brot.y = saveData.brotY;
+                    }
+
+                    // Restore Brot's animals collected count
+                    if (brot && saveData.brotAnimalsCollected !== undefined) {
+                        brot.animalsCollected = saveData.brotAnimalsCollected;
+                    }
+                }
+
+                // Restore Brot's animals
+                if (saveData.brotAnimals) {
+                    brotAnimals.length = 0;
+                    saveData.brotAnimals.forEach(animal => {
+                        brotAnimals.push({
+                            x: animal.x,
+                            y: animal.y,
+                            radius: animal.radius || 8,
+                            color: animal.color || '#000',
+                            outlineColor: animal.outlineColor || '#fff',
+                            inBrotZone: true,
+                            brotBehaviorState: animal.brotBehaviorState || 'idle',
+                            brotIdleTimer: animal.brotIdleTimer || 300,
+                            brotTargetX: animal.brotTargetX || animal.x,
+                            brotTargetY: animal.brotTargetY || animal.y
+                        });
+                    });
+                }
+
                 return true;
             } catch (e) {
                 console.error('Failed to load save:', e);
@@ -1931,6 +2102,38 @@
                 { x: -2000, y: -600, count: 18 },  // Jawn
                 { x: 3033, y: -49, count: 25 },    // Pin
             ];
+
+            // Dense grass patch for Brot's 800px animal zone
+            for (let i = 0; i < 150; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 100 + Math.random() * 700; // Spread across 800px radius
+                grassPatches.push({
+                    x: -4600 + Math.cos(angle) * dist,
+                    y: 3400 + Math.sin(angle) * dist,
+                    baseAngle: -Math.PI / 2 + (Math.random() - 0.5) * 0.3,
+                    currentAngle: -Math.PI / 2,
+                    bentAngle: -Math.PI / 2,
+                    length: 4 + Math.random() * 5,
+                    swayOffset: Math.random() * Math.PI * 2,
+                    bentTimer: 0
+                });
+            }
+
+            // Large grass patch for Ram
+            for (let i = 0; i < 80; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 30 + Math.random() * 150; // Spread across ~150px radius
+                grassPatches.push({
+                    x: -1474 + Math.cos(angle) * dist,
+                    y: 1819 + Math.sin(angle) * dist,
+                    baseAngle: -Math.PI / 2 + (Math.random() - 0.5) * 0.3,
+                    currentAngle: -Math.PI / 2,
+                    bentAngle: -Math.PI / 2,
+                    length: 4 + Math.random() * 5,
+                    swayOffset: Math.random() * Math.PI * 2,
+                    bentTimer: 0
+                });
+            }
 
             for (let loc of grassLocations) {
                 for (let i = 0; i < loc.count; i++) {
@@ -2224,6 +2427,7 @@
                 console.log('Has Home Beacon:', game.hasHomeBeacon);
                 console.log('Has Work Tools:', game.hasWorkTools);
                 console.log('Has Max Fulfillment Coin:', game.hasMaxFulfillmentCoin);
+                console.log('Has Air of Confidence:', game.hasAirOfConfidence);
                 console.log('--- Collected Disks ---');
                 if (collectedDisks.length === 0) {
                     console.log('  (none)');
@@ -2327,6 +2531,10 @@
             // Normal movement keys
             if (e.key in game.keys) {
                 game.keys[e.key] = true;
+                // Mark that user has interacted (for Chrome autoplay policy)
+                if (e.key.startsWith('Arrow')) {
+                    game.userHasInteracted = true;
+                }
             }
         });
 
@@ -2453,6 +2661,23 @@
                 } else {
                     currentPages = npc.dialogue;
                 }
+            } else if (npc.name === 'Brot') {
+                // Brot's progressive dialogue based on animals collected
+                if (npc.hasCompletedQuest) {
+                    currentPages = npc.completedDialogue;
+                } else if (npc.animalsCollected >= 50 && !npc.itemGiven) {
+                    currentPages = npc.fiftyAnimalsDialogue;
+                } else if (npc.animalsCollected >= 25) {
+                    currentPages = npc.twentyFiveAnimalsDialogue;
+                } else if (npc.animalsCollected >= 10) {
+                    currentPages = npc.tenAnimalsDialogue;
+                } else if (npc.animalsCollected >= 5) {
+                    currentPages = npc.fiveAnimalsDialogue;
+                } else if (npc.animalsCollected >= 1) {
+                    currentPages = npc.oneAnimalDialogue;
+                } else {
+                    currentPages = npc.dialogue;
+                }
             } else if (npc.name === 'Noodles') {
                 // Noodles only gives disk when player chain has 750+ links
                 if (npc.itemGiven) {
@@ -2470,6 +2695,19 @@
                     currentPages = npc.declinedDialogue;
                 } else if (npc.isFollowing) {
                     currentPages = npc.followingDialogue;
+                } else {
+                    currentPages = npc.dialogue;
+                }
+            } else if (npc.name === 'Ram') {
+                // Ram's dialogue handling
+                if (npc.itemGiven) {
+                    currentPages = npc.completedDialogue;
+                } else if (dialogue.showingNoDiamondDialogue && npc.noDiamondDialogue) {
+                    currentPages = npc.noDiamondDialogue;
+                } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                    currentPages = npc.declinedDialogue;
+                } else if (totalCarrying >= modifiers.carryCapacity && npc.fullDialogue) {
+                    currentPages = npc.fullDialogue;
                 } else {
                     currentPages = npc.dialogue;
                 }
@@ -2595,6 +2833,50 @@
                     dialogue.currentPage = 0;
                     endDialogue();
                     return;
+                } else if (npc.name === 'Brot' && npc.animalsCollected >= 50 && !npc.itemGiven && currentPages === npc.fiftyAnimalsDialogue) {
+                    // Give White Diamond to player (worth 100 coins, weighs 100)
+                    player.carryingItems.push({
+                        type: 'diamond',
+                        name: 'White Diamond',
+                        coinValue: 100,
+                        slowAmount: 100
+                    });
+                    npc.itemGiven = true;
+                    npc.hasCompletedQuest = true;
+                    npc.refusesToCollectCoins = false; // Now Brot will collect coins
+                    dialogue.currentPage = 0;
+                    endDialogue();
+                    return;
+                } else if (npc.name === 'Ram' && dialogue.choiceResult === 'yes' && !npc.itemGiven && !npc.isCollectingDiamond) {
+                    // Check if player has a regular diamond (any except White Diamond/Golden Fleece)
+                    const hasRegularDiamond = player.carryingItems.some(item =>
+                        item.type === 'diamond' &&
+                        item.slowAmount !== 100 &&
+                        item.name !== 'White Diamond'
+                    );
+
+                    if (!hasRegularDiamond) {
+                        // Show no diamond dialogue
+                        dialogue.currentPage = 0;
+                        dialogue.choiceResult = null;
+                        dialogue.showingNoDiamondDialogue = true;
+                        return;
+                    }
+
+                    // Check if player has space for the ability
+                    if (player.carryingItems.length >= modifiers.carryCapacity) {
+                        // Show full inventory dialogue
+                        dialogue.currentPage = 0;
+                        dialogue.choiceResult = null;
+                        return; // fullDialogue will be shown
+                    }
+
+                    // Player has diamond and space - start collecting
+                    npc.isCollectingDiamond = true;
+                    dialogue.choiceResult = null;
+                    // Diamond collection happens immediately on next proximity check
+                    endDialogue();
+                    return;
                 } else if (dialogue.choiceResult === 'yes' && npc.requiresCoins > 0 && !npc.itemGiven && !npc.isCollecting) {
                     // For paid items - enter collecting mode and show collecting dialogue
                     npc.isCollecting = true;
@@ -2690,6 +2972,23 @@
                 } else {
                     pages = npc.dialogue;
                 }
+            } else if (npc.name === 'Brot') {
+                // Brot's progressive dialogue based on animals collected
+                if (npc.hasCompletedQuest) {
+                    pages = npc.completedDialogue;
+                } else if (npc.animalsCollected >= 50 && !npc.itemGiven) {
+                    pages = npc.fiftyAnimalsDialogue;
+                } else if (npc.animalsCollected >= 25) {
+                    pages = npc.twentyFiveAnimalsDialogue;
+                } else if (npc.animalsCollected >= 10) {
+                    pages = npc.tenAnimalsDialogue;
+                } else if (npc.animalsCollected >= 5) {
+                    pages = npc.fiveAnimalsDialogue;
+                } else if (npc.animalsCollected >= 1) {
+                    pages = npc.oneAnimalDialogue;
+                } else {
+                    pages = npc.dialogue;
+                }
             } else if (npc.name === 'Noodles') {
                 // Noodles only gives disk when player chain has 750+ links
                 if (npc.itemGiven) {
@@ -2707,6 +3006,19 @@
                     pages = npc.declinedDialogue;
                 } else if (npc.isFollowing) {
                     pages = npc.followingDialogue;
+                } else {
+                    pages = npc.dialogue;
+                }
+            } else if (npc.name === 'Ram') {
+                // Ram's dialogue handling
+                if (npc.itemGiven) {
+                    pages = npc.completedDialogue;
+                } else if (dialogue.showingNoDiamondDialogue && npc.noDiamondDialogue) {
+                    pages = npc.noDiamondDialogue;
+                } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                    pages = npc.declinedDialogue;
+                } else if (totalCarrying >= modifiers.carryCapacity && npc.fullDialogue) {
+                    pages = npc.fullDialogue;
                 } else {
                     pages = npc.dialogue;
                 }
@@ -2737,7 +3049,11 @@
                 const klausCanGive = npc.name !== 'Klaus' || pinChain.links >= 50;
                 // Noodles only gives disk when player chain has 750+ links
                 const noodlesCanGive = npc.name !== 'Noodles' || chain.links >= 750;
-                if (!npc.itemGiven && npc.itemType && dialogue.choiceResult !== 'no' && totalCarrying < modifiers.carryCapacity && npc.requiresCoins === 0 && klausCanGive && noodlesCanGive) {
+                // Ram requires diamond payment, not free
+                const notRamDiamond = !npc.requiresDiamond;
+                // For NPCs with choices, require explicit 'yes'; for others, just not 'no'
+                const choiceOk = npc.hasChoice ? dialogue.choiceResult === 'yes' : dialogue.choiceResult !== 'no';
+                if (!npc.itemGiven && npc.itemType && choiceOk && totalCarrying < modifiers.carryCapacity && npc.requiresCoins === 0 && klausCanGive && noodlesCanGive && notRamDiamond) {
                     giveItemToPlayer(npc);
                 }
 
@@ -2763,7 +3079,7 @@
                             dialogue.pendingChoice = true;
                         }
                     }
-                } else if (npc.hasChoice && dialogue.currentPage === pages.length - 1 && !npc.itemGiven && !npc.isCollecting && totalCarrying < modifiers.carryCapacity && !dialogue.showingDeclinedDialogue && !dialogue.showingNeedsWorkTools) {
+                } else if (npc.hasChoice && dialogue.currentPage === pages.length - 1 && !npc.itemGiven && !npc.isCollecting && totalCarrying < modifiers.carryCapacity && !dialogue.showingDeclinedDialogue && !dialogue.showingNeedsWorkTools && !dialogue.showingNoDiamondDialogue) {
                     // Don't show choice for job NPCs when job is already accepted
                     if (npc.name === 'Weadon' && (npc.jobAccepted || jobs.currentPackage !== null || jobs.courierDeliveriesToday >= 3)) {
                         // No choice for Weadon's active job dialogues
@@ -2793,6 +3109,7 @@
             dialogue.choiceResult = null;
             dialogue.showingDeclinedDialogue = false; // Reset declined dialogue flag
             dialogue.showingNeedsWorkTools = false; // Reset needs work tools flag
+            dialogue.showingNoDiamondDialogue = false; // Reset Ram no diamond flag
             dialogue.showingStraumDropped = false; // Reset Straum flags
             dialogue.showingStraumDiamond = false;
             dialogue.showingStraumDiamondDeclined = false;
@@ -3676,11 +3993,8 @@
                                 // Deliver the package
                                 player.carryingItems.splice(i, 1);
 
-                                // Make NPC blink white
+                                // Mark NPC as completed (turns white)
                                 npc.hasCompletedQuest = true;
-                                setTimeout(() => {
-                                    npc.hasCompletedQuest = false;
-                                }, 500);
 
                                 // Increment delivery count if jobs system has courier
                                 if (jobs.hasCourier) {
@@ -3760,6 +4074,30 @@
                             }
                         }
 
+                        // If Ram is collecting diamond and player has a regular diamond
+                        if (npc.isCollectingDiamond && !npc.itemGiven) {
+                            // Find a regular diamond (any diamond except the White Diamond/Golden Fleece which has slowAmount: 100)
+                            const diamondIndex = player.carryingItems.findIndex(item =>
+                                item.type === 'diamond' &&
+                                item.slowAmount !== 100 &&
+                                item.name !== 'White Diamond'
+                            );
+
+                            if (diamondIndex !== -1) {
+                                // Remove the diamond from player
+                                player.carryingItems.splice(diamondIndex, 1);
+
+                                // Play payment sound
+                                audio.receivedGift.currentTime = 0;
+                                audio.receivedGift.play();
+
+                                // Give item to player
+                                npc.isCollectingDiamond = false;
+                                giveItemToPlayer(npc);
+                                continue;
+                            }
+                        }
+
                         // Don't re-trigger if this is the NPC we just talked to (unless they're collecting)
                         if (dialogue.lastNpc === npc && !npc.isCollecting) {
                             continue;
@@ -3833,14 +4171,12 @@
                         saveGame();
                     }
 
-                    // Deposit items
-                    if (player.carryingItems.length > 0) {
-                        const item = player.carryingItems[0];
+                    // Deposit items (find first non-package item)
+                    const itemIndex = player.carryingItems.findIndex(i => i.type !== 'package');
+                    if (itemIndex !== -1) {
+                        const item = player.carryingItems[itemIndex];
 
-                        // Skip packages - they can only be delivered to NPCs
-                        if (item.type === 'package') {
-                            // Don't deposit packages at the post - they stay in inventory
-                        } else if (item.type === 'diamond') {
+                        if (item.type === 'diamond') {
                             // Add diamond value to coins
                             for (let i = 0; i < item.coinValue; i++) {
                                 chain.links++;
@@ -3861,9 +4197,6 @@
                             audio.depositCoin.currentTime = 0;
                             audio.depositCoin.play();
 
-                            // Save game
-                            saveGame();
-
                         } else if (item.type === 'ability') {
                             // Apply ability
                             item.effect();
@@ -3877,9 +4210,6 @@
                             audio.depositSpecial.currentTime = 0;
                             audio.depositSpecial.play();
 
-                            // Save game
-                            saveGame();
-
                         } else if (item.type === 'homeBeacon') {
                             // Activate home beacon
                             game.hasHomeBeacon = true;
@@ -3892,9 +4222,6 @@
 
                             audio.depositSpecial.currentTime = 0;
                             audio.depositSpecial.play();
-
-                            // Save game
-                            saveGame();
 
                         } else if (item.type === 'musicDisk') {
                             // Add disk to collected disks if not already there
@@ -3929,9 +4256,6 @@
                             audio.depositSpecial.currentTime = 0;
                             audio.depositSpecial.play();
 
-                            // Save game
-                            saveGame();
-
                         } else if (item.type === 'workTools') {
                             // Activate work tools
                             game.hasWorkTools = true;
@@ -3944,18 +4268,16 @@
 
                             audio.depositSpecial.currentTime = 0;
                             audio.depositSpecial.play();
-
-                            // Save game
-                            saveGame();
                         }
 
-                        // Remove item (but not if it's a package)
-                        if (item.type !== 'package') {
-                            player.carryingItems.shift();
+                        // Remove the deposited item
+                        player.carryingItems.splice(itemIndex, 1);
 
-                            // Camera bounce
-                            game.cameraShakeAmount = 0.15;
-                        }
+                        // Camera bounce
+                        game.cameraShakeAmount = 0.15;
+
+                        // Save game AFTER item is removed from inventory
+                        saveGame();
                     }
                 }
             }
@@ -4064,6 +4386,12 @@
 
         // Render
         function render() {
+            // Day/Night visual - invert colors during daytime (6am-6pm)
+            const now = new Date();
+            const hours = now.getHours();
+            const isDaytime = hours >= 6 && hours < 18;
+            canvas.style.filter = isDaytime ? 'invert(1)' : 'none';
+
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -4127,7 +4455,7 @@
                 ctx.strokeStyle = droppedItem.outlineColor;
                 ctx.lineWidth = 2 * game.zoom;
 
-                if (droppedItem.type === 'package') {
+                if (droppedItem.item && droppedItem.item.type === 'package') {
                     // Draw packages as squares
                     const size = droppedItem.radius * 2 * game.zoom;
                     ctx.fillRect(screen.x - size/2, screen.y - size/2, size, size);
@@ -4156,6 +4484,38 @@
             ctx.beginPath();
             ctx.arc(pinPostScreen.x, pinPostScreen.y, pinPost.baseRadius * game.zoom, 0, Math.PI * 2);
             ctx.fill();
+
+            // Draw Brot's chain
+            ctx.fillStyle = '#888';
+            for (let seg of brotChain.segments) {
+                const screen = worldToScreen(seg.x, seg.y);
+                ctx.beginPath();
+                ctx.arc(screen.x, screen.y, 3 * game.zoom, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw Brot's post
+            const brotPostScreen = worldToScreen(brotPost.x, brotPost.y);
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(brotPostScreen.x, brotPostScreen.y, brotPost.baseRadius * game.zoom, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Brot's animals (triangles in Brot's zone - white fill)
+            for (let animal of brotAnimals) {
+                const screen = worldToScreen(animal.x, animal.y);
+                ctx.fillStyle = '#fff'; // White when in Brot's zone
+                ctx.strokeStyle = '#000'; // Black outline
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                const size = animal.radius * game.zoom;
+                ctx.moveTo(screen.x, screen.y - size);
+                ctx.lineTo(screen.x - size * 0.866, screen.y + size * 0.5);
+                ctx.lineTo(screen.x + size * 0.866, screen.y + size * 0.5);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
 
             // Draw chain as minimal circles
             ctx.fillStyle = '#888';
@@ -4249,7 +4609,7 @@
 
                 const canReceivePackage = jobs.currentPackage !== null && jobs.currentPackage.targetNpc === npc.name;
 
-                if ((npc.isCollecting && !npc.itemGiven) || canReceivePackage) {
+                if ((npc.isCollecting && !npc.itemGiven) || (npc.isCollectingDiamond && !npc.itemGiven) || canReceivePackage) {
                     // Blink between white and black
                     const blinkSpeed = 3; // Blinks per second
                     const isWhite = Math.floor(time * blinkSpeed) % 2 === 0;
@@ -4432,6 +4792,23 @@
                     } else {
                         pages = npc.dialogue;
                     }
+                } else if (npc.name === 'Brot') {
+                    // Brot's progressive dialogue based on animals collected
+                    if (npc.hasCompletedQuest) {
+                        pages = npc.completedDialogue;
+                    } else if (npc.animalsCollected >= 50 && !npc.itemGiven) {
+                        pages = npc.fiftyAnimalsDialogue;
+                    } else if (npc.animalsCollected >= 25) {
+                        pages = npc.twentyFiveAnimalsDialogue;
+                    } else if (npc.animalsCollected >= 10) {
+                        pages = npc.tenAnimalsDialogue;
+                    } else if (npc.animalsCollected >= 5) {
+                        pages = npc.fiveAnimalsDialogue;
+                    } else if (npc.animalsCollected >= 1) {
+                        pages = npc.oneAnimalDialogue;
+                    } else {
+                        pages = npc.dialogue;
+                    }
                 } else if (npc.name === 'Noodles') {
                     // Noodles only gives disk when player chain has 750+ links
                     if (npc.itemGiven) {
@@ -4449,6 +4826,19 @@
                         pages = npc.declinedDialogue;
                     } else if (npc.isFollowing) {
                         pages = npc.followingDialogue;
+                    } else {
+                        pages = npc.dialogue;
+                    }
+                } else if (npc.name === 'Ram') {
+                    // Ram's dialogue handling
+                    if (npc.itemGiven) {
+                        pages = npc.completedDialogue;
+                    } else if (dialogue.showingNoDiamondDialogue && npc.noDiamondDialogue) {
+                        pages = npc.noDiamondDialogue;
+                    } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                        pages = npc.declinedDialogue;
+                    } else if (totalCarrying >= modifiers.carryCapacity && npc.fullDialogue) {
+                        pages = npc.fullDialogue;
                     } else {
                         pages = npc.dialogue;
                     }
@@ -4639,8 +5029,9 @@
                 const dy = player.y - animal.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                // Start following if within 12px radius and less than 10 are following
-                if (!animal.following && canFollow && dist <= 12 && followingCount < 10) {
+                // Start following if within 12px radius and less than 10 are following (or unlimited with Air of Confidence)
+                const maxFollowing = game.hasAirOfConfidence ? Infinity : 10;
+                if (!animal.following && canFollow && dist <= 12 && followingCount < maxFollowing) {
                     animal.following = true;
                     followingCount++;
                 }
@@ -4765,13 +5156,275 @@
             return convertedAny;
         }
 
+        // Check if following animals enter Brot's 800px zone
+        function checkBrotAnimalCapture() {
+            const brot = npcs.find(n => n.name === 'Brot');
+            if (!brot) return;
+
+            // Check each following animal if within 800px of Brot
+            for (let i = farmAnimals.length - 1; i >= 0; i--) {
+                const animal = farmAnimals[i];
+
+                if (animal.following) {
+                    const dx = brot.x - animal.x;
+                    const dy = brot.y - animal.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist <= 800) {
+                        // Animal enters Brot's zone - stop following player, become Brot's animal
+                        animal.following = false;
+                        animal.inBrotZone = true;
+                        animal.brotBehaviorState = 'idle'; // 'idle', 'movingToward', 'movingAway'
+                        animal.brotIdleTimer = Math.random() * 300 + 300; // 5-10 seconds at 60fps
+                        animal.brotTargetX = animal.x;
+                        animal.brotTargetY = animal.y;
+
+                        // Move animal to brotAnimals array (permanent)
+                        brotAnimals.push(animal);
+                        farmAnimals.splice(i, 1);
+
+                        // Increment Brot's animal count
+                        brot.animalsCollected++;
+                    }
+                }
+            }
+        }
+
+        // Update animals in Brot's zone (wander behavior)
+        function updateBrotAnimals() {
+            const brot = npcs.find(n => n.name === 'Brot');
+            if (!brot) return;
+
+            for (let animal of brotAnimals) {
+                // Decrease idle timer
+                if (animal.brotBehaviorState === 'idle') {
+                    animal.brotIdleTimer--;
+
+                    if (animal.brotIdleTimer <= 0) {
+                        // Start moving - randomly toward or away from Brot
+                        const moveToward = Math.random() < 0.5;
+                        animal.brotBehaviorState = moveToward ? 'movingToward' : 'movingAway';
+
+                        // Pick a target position
+                        const angle = Math.random() * Math.PI * 2;
+                        let targetDist;
+
+                        if (moveToward) {
+                            // Move closer to Brot (100-400px from Brot)
+                            targetDist = 100 + Math.random() * 300;
+                        } else {
+                            // Move away from Brot (400-750px from Brot)
+                            targetDist = 400 + Math.random() * 350;
+                        }
+
+                        animal.brotTargetX = brot.x + Math.cos(angle) * targetDist;
+                        animal.brotTargetY = brot.y + Math.sin(angle) * targetDist;
+                    }
+                } else {
+                    // Moving toward target
+                    const dx = animal.brotTargetX - animal.x;
+                    const dy = animal.brotTargetY - animal.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 5) {
+                        // Reached target, go idle
+                        animal.brotBehaviorState = 'idle';
+                        animal.brotIdleTimer = Math.random() * 300 + 300; // 5-10 seconds
+                    } else {
+                        // Move toward target at speed 0.5
+                        const moveSpeed = 0.5;
+                        animal.x += (dx / dist) * moveSpeed;
+                        animal.y += (dy / dist) * moveSpeed;
+
+                        // Clamp to 800px zone
+                        const dxBrot = animal.x - brot.x;
+                        const dyBrot = animal.y - brot.y;
+                        const distBrot = Math.sqrt(dxBrot * dxBrot + dyBrot * dyBrot);
+                        if (distBrot > 780) {
+                            // Push back inside zone
+                            const ratio = 780 / distBrot;
+                            animal.x = brot.x + dxBrot * ratio;
+                            animal.y = brot.y + dyBrot * ratio;
+                            // Go idle when hitting boundary
+                            animal.brotBehaviorState = 'idle';
+                            animal.brotIdleTimer = Math.random() * 300 + 300;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update Brot's chain physics
+        function updateBrotChain() {
+            const brot = npcs.find(n => n.name === 'Brot');
+            if (!brot) return;
+
+            if (brotChain.segments.length === 0) return;
+
+            // Set last segment to Brot's position
+            brotChain.segments[brotChain.segments.length - 1].x = brot.x;
+            brotChain.segments[brotChain.segments.length - 1].y = brot.y;
+
+            // Apply constraints from Brot back to post
+            const iterations = 5;
+            for (let iter = 0; iter < iterations; iter++) {
+                for (let i = brotChain.segments.length - 2; i >= 0; i--) {
+                    const curr = brotChain.segments[i];
+                    const next = brotChain.segments[i + 1];
+                    const dx = next.x - curr.x;
+                    const dy = next.y - curr.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > brotChain.linkLength) {
+                        const ratio = brotChain.linkLength / dist;
+                        curr.x = next.x - dx * ratio;
+                        curr.y = next.y - dy * ratio;
+                    }
+                }
+
+                brotChain.segments[0].x = brotPost.x;
+                brotChain.segments[0].y = brotPost.y;
+
+                for (let i = 1; i < brotChain.segments.length; i++) {
+                    const prev = brotChain.segments[i - 1];
+                    const curr = brotChain.segments[i];
+                    const dx = curr.x - prev.x;
+                    const dy = curr.y - prev.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > brotChain.linkLength) {
+                        const ratio = brotChain.linkLength / dist;
+                        curr.x = prev.x + dx * ratio;
+                        curr.y = prev.y + dy * ratio;
+                    }
+                }
+            }
+
+            brotChain.segments[0].x = brotPost.x;
+            brotChain.segments[0].y = brotPost.y;
+            brotChain.segments[brotChain.segments.length - 1].x = brot.x;
+            brotChain.segments[brotChain.segments.length - 1].y = brot.y;
+
+            // Final constraint pass
+            for (let i = brotChain.segments.length - 2; i >= 0; i--) {
+                const curr = brotChain.segments[i];
+                const next = brotChain.segments[i + 1];
+                const dx = next.x - curr.x;
+                const dy = next.y - curr.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > brotChain.linkLength) {
+                    const ratio = brotChain.linkLength / dist;
+                    curr.x = next.x - dx * ratio;
+                    curr.y = next.y - dy * ratio;
+                }
+            }
+        }
+
+        // Update Brot's behavior (collect coins after quest complete)
+        function updateBrot() {
+            const brot = npcs.find(n => n.name === 'Brot');
+            if (!brot) return;
+
+            // Check if player is close enough to stop Brot's movement
+            const dx = player.x - brot.x;
+            const dy = player.y - brot.y;
+            const distToPlayer = Math.sqrt(dx * dx + dy * dy);
+
+            // Stop moving if player is within 50 radius
+            if (distToPlayer <= 50) {
+                return;
+            }
+
+            // Only collect coins after quest is complete
+            if (!brot.hasCompletedQuest || brot.refusesToCollectCoins) {
+                return;
+            }
+
+            // Calculate max chain reach
+            const maxChainReach = brotChain.links * brotChain.linkLength;
+
+            // If carrying a coin, return to post
+            if (brot.carryingCoin !== null) {
+                const dxPost = brotPost.x - brot.x;
+                const dyPost = brotPost.y - brot.y;
+                const distToPost = Math.sqrt(dxPost * dxPost + dyPost * dyPost);
+
+                if (distToPost < 5) {
+                    // Deposit coin and grow chain
+                    brotChain.links++;
+                    brotChain.segments.push({
+                        x: brotPost.x,
+                        y: brotPost.y
+                    });
+                    brot.carryingCoin = null;
+                    brot.returningToPost = false;
+                    brot.targetCoinIndex = -1;
+                } else {
+                    // Move toward post at speed 1
+                    const moveX = (dxPost / distToPost) * 1;
+                    const moveY = (dyPost / distToPost) * 1;
+                    const newX = brot.x + moveX;
+                    const newY = brot.y + moveY;
+
+                    const newDistToPost = Math.sqrt((newX - brotPost.x) ** 2 + (newY - brotPost.y) ** 2);
+                    if (newDistToPost <= maxChainReach) {
+                        brot.x = newX;
+                        brot.y = newY;
+                    }
+                }
+            } else {
+                // Find closest coin
+                let closestCoinIndex = -1;
+                let closestDist = Infinity;
+
+                for (let i = 0; i < coins.length; i++) {
+                    const coin = coins[i];
+                    if (coin.collected) continue;
+
+                    const dxCoin = coin.x - brot.x;
+                    const dyCoin = coin.y - brot.y;
+                    const distToCoin = Math.sqrt(dxCoin * dxCoin + dyCoin * dyCoin);
+
+                    if (distToCoin < closestDist) {
+                        closestDist = distToCoin;
+                        closestCoinIndex = i;
+                    }
+                }
+
+                // Move toward closest coin
+                if (closestCoinIndex !== -1) {
+                    const targetCoin = coins[closestCoinIndex];
+                    const dxCoin = targetCoin.x - brot.x;
+                    const dyCoin = targetCoin.y - brot.y;
+                    const distToCoin = Math.sqrt(dxCoin * dxCoin + dyCoin * dyCoin);
+
+                    if (distToCoin <= brot.radius + targetCoin.radius) {
+                        // Pick up the coin
+                        brot.carryingCoin = targetCoin;
+                        targetCoin.collected = true;
+                        brot.returningToPost = true;
+                    } else {
+                        // Move toward coin at speed 1
+                        const moveX = (dxCoin / distToCoin) * 1;
+                        const moveY = (dyCoin / distToCoin) * 1;
+                        const newX = brot.x + moveX;
+                        const newY = brot.y + moveY;
+
+                        const newDistToPost = Math.sqrt((newX - brotPost.x) ** 2 + (newY - brotPost.y) ** 2);
+                        if (newDistToPost <= maxChainReach) {
+                            brot.x = newX;
+                            brot.y = newY;
+                        }
+                    }
+                }
+            }
+        }
+
         // Update Clint's following behavior
         function updateClint() {
             const clint = npcs.find(n => n.name === 'Clint');
             if (!clint || !clint.isFollowing) return;
 
             // Calculate target position to the side of the player
-            const sideOffset = 50 * clint.followSide; // 50 units to the side
+            const sideOffset = 150 * clint.followSide; // 150 units to the side
             const targetX = player.x + sideOffset;
             const targetY = player.y;
 
@@ -4901,6 +5554,10 @@
                 updateChain();
                 updatePin();
                 updatePinChain();
+                updateBrot();
+                updateBrotChain();
+                updateBrotAnimals();
+                checkBrotAnimalCapture();
                 checkCoins();
             } else if (game.showAbilityDisplay) {
                 updateAbilityDisplay();
@@ -4927,6 +5584,7 @@
                 updatePlayer();
                 updateChain();
                 updatePinChain();
+                updateBrotChain();
             } else if (dialogue.active && !dialogue.isWaiting) {
                 // Check if player is still near the NPC while reading dialogue
                 if (dialogue.npc) {
@@ -4946,6 +5604,7 @@
                 updatePlayer();
                 updateChain();
                 updatePinChain();
+                updateBrotChain();
             }
             render();
             requestAnimationFrame(gameLoop);
@@ -4954,6 +5613,7 @@
         // Initialize and start
         initChain();
         initPinChain();
+        initBrotChain();
         initMusic();
         initVisualElements();
 

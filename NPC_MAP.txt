@@ -1,0 +1,159 @@
+================================================================================
+                          CHAIN GAME - NPC WORLD MAP
+                               Version 0.50
+================================================================================
+
+COORDINATE SYSTEM: X increases to the right, Y increases downward
+                   Post (player anchor) is at origin (0, 0)
+
+Scale: Each character represents approximately 200 units
+
+
+                                    NORTH (Y-)
+                                       |
+                     WEST (X-) --------+-------- EAST (X+)
+                                       |
+                                    SOUTH (Y+)
+
+
+Y: -4060 .                          Noodles (-4500,-4060)
+         .
+         .
+Y: -3400 .              Don (-3800,-3400)
+         .
+         .
+Y: -2500 .          Wheaton (-2000,-2500)     Chaff (200,-2500)     Weadon (2100,-2400)
+         .
+         .
+Y: -2129 .        Quincy (-2599,-2129)
+         .
+         .
+         .
+Y: -1250 .              Cal (-400,-1250)
+         .
+Y: -1000 .                                George (0,-1000)
+         .
+Y: -850  .                                              Hank (700,-850)
+         .
+Y: -600  .          Jawn (-2000,-600)
+         .
+Y: -450  .                        Sam (-300,-450)
+Y: -350  .                  Ron (-600,-350)
+Y: -250  .                                Wes (150,-250)
+Y: -200  .                                          Eddie (550,-200)
+         .
+Y: -60   .                                                    Pin (3033,-49)      Klaus (4500,-60)
+         .
+Y: 0     .  ======================== POST (0,0) ========================
+         .
+Y: 100   .                                            Fritz (2000,100)
+Y: 150   .                                Tim (150,150)
+Y: 200   .                      Gary (-150,200)
+Y: 250   .                                    Chris (350,250)
+         .
+Y: 350   .                Sally (-500,350)
+Y: 400   .                                                                        Clint (5000,400)
+Y: 500   .        Betty (-1650,500)   Zoe (-500,500)
+Y: 550   .                                Bob (4,550)
+         .
+         .
+Y: 1000  .                                              Straum (1000,1000)
+         .
+         .
+Y: 1819  .            Ram (-1474,1819)
+         .
+         .
+         .
+         .
+         .
+Y: 3200  .                                                      Moe (3500,3200)
+Y: 3400  .    Brot (-4600,3400)
+         .
+Y: 3800  .          Rob (-3200,3800)
+         .
+         +---------+---------+---------+---------+---------+---------+---------+
+        -5000    -4000    -3000    -2000    -1000      0      1000     2000    X->
+                                                            (continues to 5000)
+
+
+================================================================================
+                              NPC DIRECTORY
+================================================================================
+
+NAME        COORDINATES     NOTES
+----        -----------     -----
+Brot        (-4600, 3400)   Far southwest, has animals quest, gives White Diamond
+Noodles     (-4500, -4060)  Far northwest, gives BUDSbeats disk (750+ links)
+Don         (-3800, -3400)  Northwest area
+Rob         (-3200, 3800)   Far southwest
+Quincy      (-2599, -2129)  West-northwest area
+Wheaton     (-2000, -2500)  Northwest, animal retriever job
+Jawn        (-2000, -600)   West area
+Betty       (-1650, 500)    Southwest area
+Ram         (-1474, 1819)   South-southwest, sells Air of Confidence (diamond)
+Ron         (-600, -350)    West of post
+Sally       (-500, 350)     Southwest of post
+Zoe         (-500, 500)     Southwest of post
+Cal         (-400, -1250)   North-northwest
+Sam         (-300, -450)    Northwest of post
+Gary        (-150, 200)     Near post, southwest
+George      (0, -1000)      Due north, has Chill Tune Disk
+POST        (0, 0)          ** PLAYER ANCHOR POINT **
+Bob         (4, 550)        South of post
+Tim         (150, 150)      Near post, southeast (starter NPC)
+Wes         (150, -250)     North of post, free diamond
+Chris       (350, 250)      East of post
+Eddie       (550, -200)     Northeast of post
+Hank        (700, -850)     North-northeast
+Straum      (1000, 1000)    Southeast, gives coins/diamond
+Fritz       (2000, 100)     East area
+Weadon      (2100, -2400)   Northeast, courier job
+Pin         (3033, -49)     Far east, chained NPC (give coins for links)
+Moe         (3500, 3200)    Far southeast
+Klaus       (4500, -60)     Far east, gives Cache Full Disk (Pin 50+ links)
+Clint       (5000, 400)     Far east, follower NPC
+Chaff       (200, -2500)    North area
+
+
+================================================================================
+                            DISTANCE FROM POST
+================================================================================
+
+NEARBY (within 600 units):
+  Tim (150,150)       ~212 units
+  Gary (-150,200)     ~250 units
+  Wes (150,-250)      ~292 units
+  Chris (350,250)     ~430 units
+  Sam (-300,-450)     ~541 units
+  Bob (4,550)         ~550 units
+  Eddie (550,-200)    ~585 units
+
+MEDIUM DISTANCE (600-2000 units):
+  Sally (-500,350)    ~610 units
+  Ron (-600,-350)     ~695 units
+  Zoe (-500,500)      ~707 units
+  Hank (700,-850)     ~1101 units
+  George (0,-1000)    ~1000 units
+  Cal (-400,-1250)    ~1312 units
+  Straum (1000,1000)  ~1414 units
+  Ram (-1474,1819)    ~2342 units
+  Betty (-1650,500)   ~1724 units
+  Fritz (2000,100)    ~2002 units
+
+FAR (2000+ units):
+  Jawn (-2000,-600)   ~2088 units
+  Wheaton (-2000,-2500) ~3202 units
+  Weadon (2100,-2400) ~3189 units
+  Chaff (200,-2500)   ~2508 units
+  Quincy (-2599,-2129) ~3361 units
+  Pin (3033,-49)      ~3033 units
+  Rob (-3200,3800)    ~4968 units
+  Don (-3800,-3400)   ~5098 units
+  Moe (3500,3200)     ~4743 units
+  Klaus (4500,-60)    ~4500 units
+  Brot (-4600,3400)   ~5719 units
+  Clint (5000,400)    ~5016 units
+  Noodles (-4500,-4060) ~6058 units
+
+
+================================================================================

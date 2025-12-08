@@ -554,6 +554,111 @@ New NPC
 
 __
 
-Let’s continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We’re now on:
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.48:
 
-v0.47
+Generate New NPC: Brot
+Location: (-4600,3400)
+Brot is a chained NPC like Pin.
+Brot starts with a long chain (500 Links).
+He's sick of picking up coins and refuses to continue. He loves animals & just wants a pet.
+The player must bring Brot animals. The same animals from the animal collecting job. His dialogue will change according to how many animals have been brought to him in increments, similar to Pin. He will be joyous at 1 animals, In disbelief at 25, Finally, Ecstatic at 50 animals- at which point, he will give the player an item worth 100 coins. Generate the item entirely.
+
+Generate dialogue: Initially tired, sad- eventually jovial and nonchalant
+
+Animal Interaction behavior:
+When animals are within visible range of Brot, they will change behavior. Animals near Brot will move toward and away from Brot within a 800px range. They will occasionally stop moving for intervals of 5-10 seconds, then continue moving toward of away from Brot. They will also occasionally change direction after stopping moving. Animals that enter Brot's 800px range no longer follow the player.
+
+Completed Dialogue: “Wow, I can't believe it... a real flock... I think I’ll get back to working on my Chain now.”
+Completed Behavior: Brot will now pick up dropped coins just like Pin.
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.49:
+
+New NPC
+(Location: -1474,1819)
+Name: Ram
+Personality: Rough and Tumble, Gruff, Severe
+Sells player: Air of Confidence
+Item Description:
+Name: Air of Confidence
+Ability: Animal following is no longer limited to 10. An unlimited number of Animal NPC's can follow the player.
+Item cost: A diamond (This is the first time anything has cost anything other than coins.)
+
+ 1. Diamond Payment Mechanic: How should the diamond payment work?
+    - Does the player need to carry a diamond to Ram and "give" it (like coins are
+  given to other NPCs)?
+    - Or does Ram take the diamond from the player's inventory automatically when they
+  say yes?
+    - Should it work with any diamond (from Wes, Pin, Straum, or Brot's Golden Fleece)?
+
+- Yeah the player carries the diamond and brings it to him like coins... It should work with any regular diamond, not Brot's Golden Fleece. Weadon's diamonds would also count.
+
+  2. Golden Fleece Exception: The Golden Fleece is technically a diamond-type item but
+  worth 100 coins. Should Ram accept the Golden Fleece as payment, or only regular
+  diamonds (worth 1)?
+
+Only regular diamonds worth 1.
+
+  3. Dialogue Flow:
+    - What should Ram say if the player doesn't have a diamond?
+    - What should Ram say if the player's inventory is full when trying to receive the
+  Air of Confidence item?
+
+"Hmm... that long of a chain and still running out of space? Interesting... Come back when you get rid of some of that."
+
+    - Should this be a yes/no choice dialogue, or does Ram just take the diamond
+  automatically if you have one?
+
+Ram will take the diamond if he is receiving it. He should blink like how other NPC's blink when receiving coins for a purchase.
+
+  4. Air of Confidence Item:
+    - Is this a depositable ability item (black circle) that needs to be taken back to
+  the post?
+
+Yes
+    - Or does the ability activate immediately upon receiving it?
+It does not activate immediately.
+
+  5. Visual Indicator: Should there be any visual elements near Ram (grass patch,
+  puddles, etc.)?
+
+large grass patch
+
+  6. Dialogue Length: How many pages of dialogue should Ram have? Given his gruff
+  personality, should he be brief and to the point, or does he have a longer
+  introduction?
+
+He can be brief and to the point.
+
+__
+
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.50:
+
+[Day/Night Visual Update]
+
+Is there any way we can invert the screen during the day using a shader or blend mode?
+
+  1. Use the simplest approach (CSS
+  filter)
+  2. Time Source: What should determine day vs night?
+    - Real-world time - Based on the player's actual local time (e.g.,
+  6am-6pm = day)
+  3. Transition: How should day/night change?
+    - Instant flip - Immediate switch at a certain time - Use the same logic as the sun/moon icons in the Work Tools.
+  4. Day/Night Duration: If using real-world time:
+Use the same logic as the sun/moon icons in the Work Tools.
+  5. The work tools already do this.
+  6. Gameplay Effects: Day/night will eventually affect NPC's but not for this update.
+
+
+__
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.51:
+
+search; saving, loading, ability
+
+This update will address existing bugs and issues. We'll address these one at a time. The first issue occurs when the game loads. The game saves whenever a player deposits something at the starting post. When the game loads, the last item deposited seems to be deposited again. For example, if you deposit zoom out 20%, quit the game, and reload the game, the player will immediately receive another zoom out 20% and the game will zoom out to 40%. When the player loads the game after depositing an item - they should not receive the item again.
+
+__
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.51:
