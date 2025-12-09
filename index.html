@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chain Game v0.51</title>
+    <title>Chain Game v0.52</title>
     <style>
         body {
             margin: 0;
@@ -4943,6 +4943,108 @@
                 ctx.textAlign = 'right';
                 ctx.fillStyle = '#fff';
                 ctx.fillText(`(${Math.round(player.x)}, ${Math.round(player.y)})`, canvas.width - 10, 20);
+
+                // Draw NPC location indicators at screen edge for nearby off-screen NPCs
+                const NEARBY_RANGE = 600;
+                const INDICATOR_RADIUS = 6;
+                const EDGE_PADDING = 15; // Distance from screen edge
+
+                // Collect indicators for stacking
+                const indicators = [];
+
+                for (let npc of npcs) {
+                    const dx = npc.x - player.x;
+                    const dy = npc.y - player.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    // Only show for NPCs within range
+                    if (dist > NEARBY_RANGE) continue;
+
+                    // Check if NPC is on screen (don't show indicator if visible)
+                    const npcScreen = worldToScreen(npc.x, npc.y);
+                    const isVisible = npcScreen.x >= 0 && npcScreen.x <= canvas.width &&
+                                     npcScreen.y >= 0 && npcScreen.y <= canvas.height;
+                    if (isVisible) continue;
+
+                    // Calculate angle from center of screen to NPC
+                    const angle = Math.atan2(dy, dx);
+
+                    // Calculate indicator position at screen edge
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+
+                    // Find intersection with screen edge
+                    let indicatorX, indicatorY;
+                    const cos = Math.cos(angle);
+                    const sin = Math.sin(angle);
+
+                    // Calculate distances to each edge
+                    const distToRight = cos > 0 ? (canvas.width - EDGE_PADDING - centerX) / cos : Infinity;
+                    const distToLeft = cos < 0 ? (EDGE_PADDING - centerX) / cos : Infinity;
+                    const distToBottom = sin > 0 ? (canvas.height - EDGE_PADDING - centerY) / sin : Infinity;
+                    const distToTop = sin < 0 ? (EDGE_PADDING - centerY) / sin : Infinity;
+
+                    const minDist = Math.min(distToRight, distToLeft, distToBottom, distToTop);
+                    indicatorX = centerX + cos * minDist;
+                    indicatorY = centerY + sin * minDist;
+
+                    // Clamp to screen bounds with padding
+                    indicatorX = Math.max(EDGE_PADDING, Math.min(canvas.width - EDGE_PADDING, indicatorX));
+                    indicatorY = Math.max(EDGE_PADDING, Math.min(canvas.height - EDGE_PADDING, indicatorY));
+
+                    indicators.push({
+                        x: indicatorX,
+                        y: indicatorY,
+                        isCompleted: npc.hasCompletedQuest,
+                        angle: angle,
+                        dist: dist
+                    });
+                }
+
+                // Sort by angle for consistent stacking
+                indicators.sort((a, b) => a.angle - b.angle);
+
+                // Stack overlapping indicators
+                const STACK_THRESHOLD = INDICATOR_RADIUS * 3;
+                for (let i = 0; i < indicators.length; i++) {
+                    for (let j = i + 1; j < indicators.length; j++) {
+                        const dx = indicators[j].x - indicators[i].x;
+                        const dy = indicators[j].y - indicators[i].y;
+                        const overlap = Math.sqrt(dx * dx + dy * dy);
+
+                        if (overlap < STACK_THRESHOLD) {
+                            // Offset the second indicator perpendicular to the edge
+                            const offsetDist = STACK_THRESHOLD - overlap + INDICATOR_RADIUS;
+                            // Offset along the edge (perpendicular to angle from center)
+                            const perpAngle = indicators[j].angle + Math.PI / 2;
+                            indicators[j].x += Math.cos(perpAngle) * offsetDist;
+                            indicators[j].y += Math.sin(perpAngle) * offsetDist;
+
+                            // Keep within bounds
+                            indicators[j].x = Math.max(EDGE_PADDING, Math.min(canvas.width - EDGE_PADDING, indicators[j].x));
+                            indicators[j].y = Math.max(EDGE_PADDING, Math.min(canvas.height - EDGE_PADDING, indicators[j].y));
+                        }
+                    }
+                }
+
+                // Draw all indicators
+                for (let ind of indicators) {
+                    ctx.beginPath();
+                    ctx.arc(ind.x, ind.y, INDICATOR_RADIUS, 0, Math.PI * 2);
+
+                    if (ind.isCompleted) {
+                        // White filled circle for completed quest
+                        ctx.fillStyle = '#fff';
+                        ctx.fill();
+                    } else {
+                        // Black circle with white outline for incomplete
+                        ctx.fillStyle = '#000';
+                        ctx.fill();
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
             }
 
             // Draw current track name under coordinates (only when in range of music)

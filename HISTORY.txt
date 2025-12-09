@@ -661,4 +661,13 @@ search; saving, loading, ability
 This update will address existing bugs and issues. We'll address these one at a time. The first issue occurs when the game loads. The game saves whenever a player deposits something at the starting post. When the game loads, the last item deposited seems to be deposited again. For example, if you deposit zoom out 20%, quit the game, and reload the game, the player will immediately receive another zoom out 20% and the game will zoom out to 40%. When the player loads the game after depositing an item - they should not receive the item again.
 
 __
-Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.51:
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.52:
+
+search: Work Tools, reference:Home Beacon
+
+[NPC location indicators]
+Let's add a feature to the Work Tools. Whenever an NPC is off screen, but within a 600 unit range of the player "nearby" there should be an indicator that shows the direction of the NPC. It should also indicate if the NPC has questCompleted(white circle) or not (black circle, white outline.) All NPC's should show up when off screen and within the 600 unit range.
+
+Visual: A small 6px circle - white if NPC has questCompleted, black if not.
+
+The indicator should never appear at the same time as the NPC it indicates.
