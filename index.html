@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chain Game v0.53</title>
+    <title>Chain Game v0.54</title>
     <style>
         body {
             margin: 0;
@@ -1074,16 +1074,19 @@
                     ["His last post was pretty far Southwest of here.", "He was sent out to help our newest member."]
                 ],
                 firstPackageDialogue: [
-                    ["Great. Let me explain this courier biz.", "I'm gonna give you a package.", "You take it to the whoever it belongs. That's the biz."]
+                    ["Great. Let me explain this courier biz.", "I'm gonna give you a package.", "You take it to the whoever it belongs.", "They'll give you a diamond. That's the biz."]
+                ],
+                readyForBizDialogue: [
+                    ["Are you ready for the biz?", "(Up for yes, Down for no)"]
                 ],
                 activeDeliveryDialogue: [
-                    ["You have until TIME_PLACEHOLDER to do the biz. This package is for NPC_PLACEHOLDER."]
+                    ["You have until TIME_PLACEHOLDER to do the biz.", "This package is for NPC_PLACEHOLDER.", "They're over by COORDINATES_PLACEHOLDER."]
                 ],
                 completedDeliveriesDialogue: [
-                    ["Three is all we need. Three a day.", "That's the biz. Come back tomorrow."]
+                    ["Five is all we need. Five a day.", "That's the biz. Come back tomorrow."]
                 ],
                 completedDialogue: [
-                    ["Come back tomorrow for more deliveries.", "Three a day. That's the biz."]
+                    ["Come back tomorrow for more deliveries.", "Five a day. That's the biz."]
                 ],
                 itemGiven: false,
                 hasCompletedQuest: false,
@@ -1525,7 +1528,7 @@
 
             // Control points for a natural wandering curve
             // First curve west, then south-west
-            const cp1x = startX - 2000;  // Curve west first
+            const cp1x = startX - 2500;  // Curve west first
             const cp1y = startY + 1500;
             const cp2x = endX + 500;     // Then approach from the east
             const cp2y = endY - 2000;
@@ -2613,6 +2616,11 @@
                     dialogue.showingStraumDiamond = false;
                 }
             }
+
+            // Weadon readyForBizDialogue is single-page with choice - set pendingChoice immediately
+            if (npc.name === 'Weadon' && jobs.hasCourier && jobs.currentPackage === null && jobs.courierDeliveriesToday < 5) {
+                dialogue.pendingChoice = true;
+            }
         }
 
         function advanceDialogue() {
@@ -2655,12 +2663,14 @@
                 currentPages = npc.retrievalDialogue;
             } else if (npc.name === 'Wheaton' && dialogue.showingNeedsWorkTools) {
                 currentPages = npc.needsWorkToolsDialogue;
-            } else if (npc.name === 'Weadon' && jobs.courierDeliveriesToday >= 3) {
+            } else if (npc.name === 'Weadon' && jobs.courierDeliveriesToday >= 5) {
                 currentPages = npc.completedDeliveriesDialogue;
             } else if (npc.name === 'Weadon' && jobs.currentPackage !== null) {
                 currentPages = npc.activeDeliveryDialogue;
             } else if (npc.name === 'Weadon' && npc.jobAccepted && !npc.firstDeliveryMade) {
                 currentPages = npc.firstPackageDialogue;
+            } else if (npc.name === 'Weadon' && jobs.hasCourier && jobs.currentPackage === null && jobs.courierDeliveriesToday < 5) {
+                currentPages = npc.readyForBizDialogue;
             } else if (npc.name === 'Weadon' && dialogue.showingNeedsWorkTools) {
                 currentPages = npc.needsWorkToolsDialogue;
             } else if (npc.name === 'Pin') {
@@ -2821,8 +2831,8 @@
                         dialogue.currentPage = -1; // Will increment to 0 next
                         // Don't return - let it continue to show retrievalDialogue
                     }
-                } else if (npc.name === 'Weadon' && dialogue.choiceResult === 'yes' && !dialogue.showingNeedsWorkTools) {
-                    // Handle Weadon job acceptance (only if not already showing needsWorkTools)
+                } else if (npc.name === 'Weadon' && dialogue.choiceResult === 'yes' && !dialogue.showingNeedsWorkTools && !jobs.hasCourier) {
+                    // Handle Weadon INITIAL job acceptance (only if not already showing needsWorkTools and not already courier)
                     if (!game.hasWorkTools) {
                         // Player needs work tools - send them to Tim
                         const timNpc = npcs.find(n => n.name === 'Tim');
@@ -2848,6 +2858,33 @@
                         dialogue.choiceResult = null;
                         dialogue.currentPage = -1; // Will increment to 0 next
                         // Don't return - let it continue to show firstPackageDialogue
+                    }
+                } else if (npc.name === 'Weadon' && jobs.hasCourier && jobs.currentPackage === null && jobs.courierDeliveriesToday < 5) {
+                    // Handle readyForBizDialogue choice for subsequent packages
+                    if (dialogue.choiceResult === 'yes') {
+                        // Give random package to NPC within player's chain reach
+                        const maxChainReach = chain.links * chain.linkLength;
+                        const eligibleNpcs = npcs.filter(n => {
+                            if (n.name === 'Weadon') return false; // Exclude Weadon
+                            // Check if NPC is within player's chain reach from post (0,0)
+                            const distFromPost = Math.sqrt(n.x * n.x + n.y * n.y);
+                            return distFromPost <= maxChainReach;
+                        });
+                        // Fallback to any NPC if none are in range (shouldn't happen)
+                        const poolNpcs = eligibleNpcs.length > 0 ? eligibleNpcs : npcs.filter(n => n.name !== 'Weadon');
+                        const randomNpc = poolNpcs[Math.floor(Math.random() * poolNpcs.length)];
+                        const weight = 5 + Math.floor(Math.random() * 6); // 5-10
+                        givePackageToPlayer(randomNpc.name, weight);
+                        // Transition to activeDeliveryDialogue
+                        dialogue.choiceResult = null;
+                        dialogue.currentPage = -1;
+                        // Don't return - let it show activeDeliveryDialogue
+                    } else if (dialogue.choiceResult === 'no') {
+                        // Show declined dialogue
+                        dialogue.currentPage = 0;
+                        dialogue.choiceResult = null;
+                        dialogue.showingDeclinedDialogue = true;
+                        return;
                     }
                 } else if (npc.name === 'Pin' && pinChain.links >= 100 && !npc.diamondGiven && currentPages === npc.hundredLinksDialogue) {
                     // Give diamond to player
@@ -2961,17 +2998,24 @@
                 pages = npc.retrievalDialogue;
             } else if (npc.name === 'Wheaton' && dialogue.showingNeedsWorkTools) {
                 pages = npc.needsWorkToolsDialogue;
-            } else if (npc.name === 'Weadon' && jobs.courierDeliveriesToday >= 3) {
+            } else if (npc.name === 'Weadon' && jobs.courierDeliveriesToday >= 5) {
                 pages = npc.completedDeliveriesDialogue;
             } else if (npc.name === 'Weadon' && jobs.currentPackage !== null) {
                 const deadline = jobs.packageDeadline;
                 const timeString = deadline ? `${deadline.getHours().toString().padStart(2, '0')}:${deadline.getMinutes().toString().padStart(2, '0')}` : 'UNKNOWN';
                 const targetNpcName = jobs.currentPackage.targetNpc || 'UNKNOWN';
+                const targetNpc = npcs.find(n => n.name === targetNpcName);
+                const coordsString = targetNpc ? `(${Math.round(targetNpc.x)}, ${Math.round(targetNpc.y)})` : 'UNKNOWN';
                 pages = npc.activeDeliveryDialogue.map(page =>
-                    page.map(sentence => sentence.replace('TIME_PLACEHOLDER', timeString).replace('NPC_PLACEHOLDER', targetNpcName))
+                    page.map(sentence => sentence
+                        .replace('TIME_PLACEHOLDER', timeString)
+                        .replace('NPC_PLACEHOLDER', targetNpcName)
+                        .replace('COORDINATES_PLACEHOLDER', coordsString))
                 );
             } else if (npc.name === 'Weadon' && npc.jobAccepted && !npc.firstDeliveryMade) {
                 pages = npc.firstPackageDialogue;
+            } else if (npc.name === 'Weadon' && jobs.hasCourier && jobs.currentPackage === null && jobs.courierDeliveriesToday < 5) {
+                pages = npc.readyForBizDialogue;
             } else if (npc.name === 'Weadon' && dialogue.showingNeedsWorkTools) {
                 pages = npc.needsWorkToolsDialogue;
             } else if (npc.name === 'Pin') {
@@ -3106,9 +3150,11 @@
                         }
                     }
                 } else if (npc.hasChoice && dialogue.currentPage === pages.length - 1 && !npc.itemGiven && !npc.isCollecting && totalCarrying < modifiers.carryCapacity && !dialogue.showingDeclinedDialogue && !dialogue.showingNeedsWorkTools && !dialogue.showingNoDiamondDialogue) {
-                    // Don't show choice for job NPCs when job is already accepted
-                    if (npc.name === 'Weadon' && (npc.jobAccepted || jobs.currentPackage !== null || jobs.courierDeliveriesToday >= 3)) {
-                        // No choice for Weadon's active job dialogues
+                    // Don't show choice for job NPCs when job is already accepted (except readyForBiz)
+                    if (npc.name === 'Weadon' && jobs.currentPackage !== null) {
+                        // No choice when actively delivering a package
+                    } else if (npc.name === 'Weadon' && jobs.courierDeliveriesToday >= 5) {
+                        // No choice when daily limit reached
                     } else if (npc.name === 'Wheaton' && npc.jobAccepted) {
                         // No choice for Wheaton's active job dialogues
                     } else {
@@ -4059,20 +4105,7 @@
                             }
                         }
 
-                        // Weadon giving packages
-                        if (npc.name === 'Weadon' && jobs.hasCourier && jobs.currentPackage === null && jobs.courierDeliveriesToday < 3) {
-                            // Check if it's after 8am today
-                            const now = new Date();
-                            const hour = now.getHours();
-
-                            if (hour >= 8) {
-                                // Give random package
-                                const eligibleNpcs = npcs.filter(n => n.name !== 'Weadon');
-                                const randomNpc = eligibleNpcs[Math.floor(Math.random() * eligibleNpcs.length)];
-                                const weight = 5 + Math.floor(Math.random() * 6); // 5-10
-                                givePackageToPlayer(randomNpc.name, weight);
-                            }
-                        }
+                        // Weadon - removed auto-package-giving, now handled through dialogue
 
                         // If NPC is collecting coins and player has coins, take them
                         if (npc.isCollecting && !npc.itemGiven && player.carryingCoins.length > 0) {
@@ -4795,17 +4828,24 @@
                     pages = npc.activeJobDialogue;
                 } else if (npc.name === 'Wheaton' && npc.jobAccepted && !npc.firstRetrievalCompleted) {
                     pages = npc.retrievalDialogue;
-                } else if (npc.name === 'Weadon' && jobs.courierDeliveriesToday >= 3) {
+                } else if (npc.name === 'Weadon' && jobs.courierDeliveriesToday >= 5) {
                     pages = npc.completedDeliveriesDialogue;
                 } else if (npc.name === 'Weadon' && jobs.currentPackage !== null) {
                     const deadline = jobs.packageDeadline;
                     const timeString = deadline ? `${deadline.getHours().toString().padStart(2, '0')}:${deadline.getMinutes().toString().padStart(2, '0')}` : 'UNKNOWN';
                     const targetNpcName = jobs.currentPackage.targetNpc || 'UNKNOWN';
+                    const targetNpc = npcs.find(n => n.name === targetNpcName);
+                    const coordsString = targetNpc ? `(${Math.round(targetNpc.x)}, ${Math.round(targetNpc.y)})` : 'UNKNOWN';
                     pages = npc.activeDeliveryDialogue.map(page =>
-                        page.map(sentence => sentence.replace('TIME_PLACEHOLDER', timeString).replace('NPC_PLACEHOLDER', targetNpcName))
+                        page.map(sentence => sentence
+                            .replace('TIME_PLACEHOLDER', timeString)
+                            .replace('NPC_PLACEHOLDER', targetNpcName)
+                            .replace('COORDINATES_PLACEHOLDER', coordsString))
                     );
                 } else if (npc.name === 'Weadon' && npc.jobAccepted && !npc.firstDeliveryMade) {
                     pages = npc.firstPackageDialogue;
+                } else if (npc.name === 'Weadon' && jobs.hasCourier && jobs.currentPackage === null && jobs.courierDeliveriesToday < 5) {
+                    pages = npc.readyForBizDialogue;
                 } else if (npc.name === 'Pin') {
                     // Pin's progressive dialogue based on chain length
                     if (pinChain.links >= 100 && npc.diamondGiven) {

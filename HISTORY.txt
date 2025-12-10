@@ -681,3 +681,17 @@ Continue with a new version. Remember: Maintain the scope of the prompts - Ask m
 Search: NPC, Chained NPC, Pin, Brot
 
 Let's improve chained NPC's. First, let's show the coins they carry, the same way we show what the player is carrying (stacked above). Second, let's slightly increase the speed of the NPC for every 10 links in their chain.
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.54:
+
+[Courier job improvement]
+
+search: Weadon, package delivery
+
+1. When the player enters Weadon's radius, they immediately receive a package (if they have the job tools). Instead, let's make it so that the player has to talk to Weadon and choose yes or no "Are you ready for the biz?". If they choose yes, display activeDeliveryDialogue. If they choose no, show declinedDialogue
+
+2. Let's improve activeDeliveryDialogue. Let's add coordinates for the NPC that the player needs to deliver the package to. The text should read like "You have until TIME_PLACEHOLDER to do the biz. This package is for NPC_PLACEHOLDER. They're over by COORDINATES_PLACEHOLDER."
+
+3. Let's increase the package delivery per day limit to 5 instead of 3.
