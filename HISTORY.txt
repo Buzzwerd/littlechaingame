@@ -209,7 +209,7 @@ __
 Let’s continue with a new version. Remember: Maintain the scope of the prompts - low creativity. Ask questions to fill in the blanks. We’re now on:
 
 V.18
-[Diagetic music update]
+[Diegetic music update]
 
 Overview
 	⁃	Remove default music
@@ -671,3 +671,13 @@ Let's add a feature to the Work Tools. Whenever an NPC is off screen, but within
 Visual: A small 6px circle - white if NPC has questCompleted, black if not.
 
 The indicator should never appear at the same time as the NPC it indicates.
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.53:
+
+[Chained NPC improvement]
+
+Search: NPC, Chained NPC, Pin, Brot
+
+Let's improve chained NPC's. First, let's show the coins they carry, the same way we show what the player is carrying (stacked above). Second, let's slightly increase the speed of the NPC for every 10 links in their chain.

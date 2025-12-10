@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chain Game v0.52</title>
+    <title>Chain Game v0.53</title>
     <style>
         body {
             margin: 0;
@@ -1513,11 +1513,37 @@
 
         function initBrotChain() {
             brotChain.segments = [];
+
+            // Create a natural curved path from post to Brot's starting position
+            // Brot is at (-4600, 3400), post is at (-3040, -2780)
+            // Use a bezier-like curve to make it look like he wandered there
+            const brot = npcs.find(n => n.name === 'Brot');
+            const startX = brotPost.x;
+            const startY = brotPost.y;
+            const endX = brot ? brot.x : -4600;
+            const endY = brot ? brot.y : 3400;
+
+            // Control points for a natural wandering curve
+            // First curve west, then south-west
+            const cp1x = startX - 2000;  // Curve west first
+            const cp1y = startY + 1500;
+            const cp2x = endX + 500;     // Then approach from the east
+            const cp2y = endY - 2000;
+
             for (let i = 0; i <= brotChain.links; i++) {
-                brotChain.segments.push({
-                    x: brotPost.x,
-                    y: brotPost.y + i * 5
-                });
+                const t = i / brotChain.links;
+
+                // Cubic bezier curve
+                const mt = 1 - t;
+                const mt2 = mt * mt;
+                const mt3 = mt2 * mt;
+                const t2 = t * t;
+                const t3 = t2 * t;
+
+                const x = mt3 * startX + 3 * mt2 * t * cp1x + 3 * mt * t2 * cp2x + t3 * endX;
+                const y = mt3 * startY + 3 * mt2 * t * cp1y + 3 * mt * t2 * cp2y + t3 * endY;
+
+                brotChain.segments.push({ x, y });
             }
         }
 
@@ -3819,6 +3845,9 @@
             // Calculate max chain reach
             const maxChainReach = pinChain.links * pinChain.linkLength;
 
+            // Calculate speed based on chain links (+0.1 per 10 links)
+            const pinSpeed = 1 + Math.floor(pinChain.links / 10) * 0.1;
+
             // If carrying a coin, return to post
             if (pin.carryingCoin !== null) {
                 const dxPost = pinPost.x - pin.x;
@@ -3837,9 +3866,9 @@
                     pin.returningToPost = false;
                     pin.targetCoinIndex = -1;
                 } else {
-                    // Move toward post at speed 1
-                    const moveX = (dxPost / distToPost) * 1;
-                    const moveY = (dyPost / distToPost) * 1;
+                    // Move toward post
+                    const moveX = (dxPost / distToPost) * pinSpeed;
+                    const moveY = (dyPost / distToPost) * pinSpeed;
                     const newX = pin.x + moveX;
                     const newY = pin.y + moveY;
 
@@ -3883,9 +3912,9 @@
                         targetCoin.collected = true;
                         pin.returningToPost = true;
                     } else {
-                        // Move toward coin at speed 1
-                        const moveX = (dxCoin / distToCoin) * 1;
-                        const moveY = (dyCoin / distToCoin) * 1;
+                        // Move toward coin
+                        const moveX = (dxCoin / distToCoin) * pinSpeed;
+                        const moveY = (dyCoin / distToCoin) * pinSpeed;
                         const newX = pin.x + moveX;
                         const newY = pin.y + moveY;
 
@@ -4628,6 +4657,15 @@
                 ctx.strokeStyle = strokeColor;
                 ctx.lineWidth = 2 * game.zoom;
                 ctx.stroke();
+
+                // Draw carried coin above chained NPC (same style as player)
+                if (npc.isChainedNPC && npc.carryingCoin !== null) {
+                    const coinStackOffset = (npc.radius + 8) * game.zoom;
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(npcScreen.x, npcScreen.y - coinStackOffset, 8 * game.zoom, 0, Math.PI * 2);
+                    ctx.fill();
+                }
 
                 // Draw wait circle above NPC if player is nearby
                 if (dialogue.active && dialogue.npc === npc && dialogue.isWaiting) {
@@ -5443,6 +5481,9 @@
             // Calculate max chain reach
             const maxChainReach = brotChain.links * brotChain.linkLength;
 
+            // Calculate speed based on chain links (+0.1 per 10 links)
+            const brotSpeed = 1 + Math.floor(brotChain.links / 10) * 0.1;
+
             // If carrying a coin, return to post
             if (brot.carryingCoin !== null) {
                 const dxPost = brotPost.x - brot.x;
@@ -5460,9 +5501,9 @@
                     brot.returningToPost = false;
                     brot.targetCoinIndex = -1;
                 } else {
-                    // Move toward post at speed 1
-                    const moveX = (dxPost / distToPost) * 1;
-                    const moveY = (dyPost / distToPost) * 1;
+                    // Move toward post
+                    const moveX = (dxPost / distToPost) * brotSpeed;
+                    const moveY = (dyPost / distToPost) * brotSpeed;
                     const newX = brot.x + moveX;
                     const newY = brot.y + moveY;
 
@@ -5504,9 +5545,9 @@
                         targetCoin.collected = true;
                         brot.returningToPost = true;
                     } else {
-                        // Move toward coin at speed 1
-                        const moveX = (dxCoin / distToCoin) * 1;
-                        const moveY = (dyCoin / distToCoin) * 1;
+                        // Move toward coin
+                        const moveX = (dxCoin / distToCoin) * brotSpeed;
+                        const moveY = (dyCoin / distToCoin) * brotSpeed;
                         const newX = brot.x + moveX;
                         const newY = brot.y + moveY;
 
