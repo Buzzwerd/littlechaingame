@@ -66,6 +66,27 @@ NPCs are defined in the `npcs[]` array. Each NPC needs:
 - `requiresCoins` - Cost (0 for free)
 - `hasChoice` - true if yes/no dialogue needed
 
+### Adding NPCs with Custom Dialogue Logic
+**IMPORTANT:** If an NPC has conditional dialogue (different dialogues based on state), you must update dialogue selection in **THREE places**:
+
+1. **`advanceDialogue()` - `currentPages` section** (~line 2700s)
+   - Determines which dialogue is currently showing BEFORE transitions
+
+2. **`advanceDialogue()` - `pages` section** (~line 3100s)
+   - Determines which dialogue to show AFTER page increment
+
+3. **Rendering loop - `pages` section** (~line 5200s)
+   - Determines which dialogue to display on screen
+
+Search for `else if (npc.name === 'Clint')` or `else if (npc.name === 'Bim')` to find all three locations. Missing any of these will cause the NPC to show default dialogue instead of conditional dialogue.
+
+Also update:
+- **Save function** (~line 1680s) - Add any new NPC state properties
+- **Load function** (~line 1820s) - Restore those properties
+- **`dialogue` object** (~line 91) - Add any new dialogue flags (e.g., `showingAcceptedHelp`)
+- **`startDialogue()`** - Reset new dialogue flags
+- **`endDialogue()`** - Reset new dialogue flags
+
 ### Adding Music Disks
 1. Add tracks to `music/[DiskName]/`
 2. Create NPC with `itemType: 'musicDisk'`

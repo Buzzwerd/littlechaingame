@@ -695,3 +695,72 @@ search: Weadon, package delivery
 2. Let's improve activeDeliveryDialogue. Let's add coordinates for the NPC that the player needs to deliver the package to. The text should read like "You have until TIME_PLACEHOLDER to do the biz. This package is for NPC_PLACEHOLDER. They're over by COORDINATES_PLACEHOLDER."
 
 3. Let's increase the package delivery per day limit to 5 instead of 3.
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.55:
+
+[Visual feedback for full inventory]
+
+Let's make it so that if a player collides with a coin or item on the ground while their inventory is full, the coin or item is nudged. The coin or item should maintain it's position, it should just move out of the way and move back with a slightly elastic motion.
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.55:
+
+[New NPC with unique properties]
+
+search: NPC, work tools, Clint
+
+Location: -1000, 30
+Name: Bim
+Description: Bim is trying to create a list of all the people in the world, but he doesn't feel like doing all the work. First, Bim will ask the player if they would like to help him in this task (yes or no). If the player selects yes, Bim will say: "Wow, so you've already met X people... Let's keep going, I heard there's someone you haven't met over by Placeholder_coordinates. Keep bringing me the scoop."
+Dialogue: Generate placeholders where needed
+Personality: Naive, selfish, lazy
+
+Bim's dialogue is unique, in that it shows the player a count of how many NPC's they've talked to. It also shows them the coordinates of the closest NPC that they have not talked to.
+
+Once the player has met 50 NPC's Bim's dialogue will change. He will now ask the player another yes or no question.
+
+"Hey, at first it seemed like too much work to find all these people, but you make it look so easy! Do you think maybe I could tag along? That way I can meet all these people myself!" Up for yes, down for no.
+
+If the player chooses yes - Bim will now follow the player the same way Clint does (at a unique range). If the player chooses no Bim will display a declinedDialogue. He will ask the player again next time they speak to him.
+
+[Bim following modifies the work tools display]
+
+If Bim is following the player - then the work tool display will show the name of NPC's the player has already met along with the usual screen edge indicator "white circle". NPC's the player has not met will still have a black circle as usual.
+
+
+  Critical question about the 50 NPC threshold:
+  - Adjust to 25 instead.
+
+ About NPC tracking:
+  1. What counts as "meeting" an NPC - NPC's that are "white" have been met. This should already be persistent.
+  About Bim's dialogue:
+  3. When showing coordinates of the closest unmet NPC it should show actual coordinates.
+  4. What should Bim say if the player has met ALL NPCs before the 50
+  threshold? Let's lower the threshold to 25.
+  5. What's Bim's initial dialogue before the player agrees to help? (The
+  "first contact" dialogue) Generate placeholder.
+
+  About Bim following:
+  6. What "unique range" should Bim follow at compared to Clint? (Clint
+  follows at 80 units) 120 units.
+  7. Should Bim have any visual distinction from other NPCs (different
+  size, outline, etc.)? No.
+  8. Can the player dismiss Bim later, or once he's following, he follows
+  forever? Bim will follow forever for now.
+  9. If the player declines and walks away, then comes back - does Bim
+  remember they declined or ask fresh? Ask fresh.
+
+  About work tools display:
+  10. When Bim is following and work tools are active - the white circles
+  for "met" NPCs should also show their name. Where should the name appear
+   relative to the circle indicator? Centered below the dot.
+  11. Should the name appear always, or only when close to the screen
+  edge? Whenever the white dot also appears. They are linked.
+
+  About Bim's appearance:
+ Same as every other NPC
+
+Any other questions?
