@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chain Game v0.58</title>
+    <title>Chain Game v0.60</title>
     <style>
         body {
             margin: 0;
@@ -29,7 +29,7 @@
 
     <script>
         /*
-         * Chain Game v0.29
+         * Chain Game v0.60
          * Hold Up+Down arrow keys for 500ms to switch between collected music disks (including Silence)
          */
 
@@ -37,7 +37,7 @@
         const ctx = canvas.getContext('2d');
 
         // Version
-        const GAME_VERSION = '0.58';
+        const GAME_VERSION = '0.60';
 
         // Title screen state
         const titleScreen = {
@@ -70,6 +70,7 @@
             hasMaxFulfillmentCoin: false,
             maxFulfillmentBoostActive: false,
             hasAirOfConfidence: false,
+            canSeeGhosts: false, // Enabled after depositing Strange Trinket
             userHasInteracted: false, // Prevents music until player presses arrow key
             nearbyNpc: null,
             keys: {
@@ -1475,6 +1476,45 @@
                 inPond: false, // Whether Momo is in a puddle
                 requiresCoins: 0,
                 itemType: null
+            },
+            {
+                name: 'Deek',
+                x: 500,
+                y: 1800,
+                initialX: 500,
+                initialY: 1800,
+                radius: 12,
+                color: '#000',
+                outlineColor: '#fff',
+                dialogue: [
+                    ["What's your problem!", "Why are you following me!", "Who do you think you are..."],
+                    ["...chasing me down like I'm here", "for your amusement?", "Are you even sorry!?"],
+                    ["(Up for yes, Down for no)"]
+                ],
+                declinedDialogue: [
+                    ["Weirdo! Get out of here!"]
+                ],
+                yesDialogue: [
+                    ["Well... I do get you've got a Chain...", "still pursuing...", "you know, whatever it is..."],
+                    ["...well I can understand that...", "so you probably chased me", "because I ran away..."],
+                    ["I didn't expect for you", "to follow me this far...", "but you're not so bad..."],
+                    ["Here, you can have this,", "I still haven't figured out", "what it does..."]
+                ],
+                completedDialogue: [
+                    ["Now...", "you can see them too."]
+                ],
+                hasChoice: true,
+                hasCompletedQuest: false,
+                itemGiven: false,
+                isFleeing: false,
+                hasReachedDestination: false,
+                declinedApology: false,
+                fleeDestX: -1500,
+                fleeDestY: -3000,
+                fleeRadius: 100, // Distance at which Deek starts fleeing
+                requiresCoins: 0,
+                itemType: 'mysteryItem',
+                mysteryItemName: 'Strange Trinket'
             }
         ];
 
@@ -1523,6 +1563,126 @@
 
         // Animals that have been captured by Brot (permanent)
         const brotAnimals = [];
+
+        // Ghost NPCs - only visible after depositing Strange Trinket
+        const ghosts = [
+            { name: 'Bud', x: 2500, y: 3200, dialogue: [["You are exactly where you need to be.", "Or exactly where you are...", "Exactly, either way."]] },
+            { name: 'Pom', x: -3100, y: 1800, dialogue: [["What is remembered, lives.", "What is forgotten, waits.", "I am neither lost nor found."]] },
+            { name: 'Art', x: 4200, y: -2900, dialogue: [["The darkness between stars...", "is not empty.", "It is full of space."]] },
+            { name: 'Misty', x: -5500, y: -4100, dialogue: [["Like morning fog on still water,", "you drift through this world.", "I'm the fog too."]] },
+            { name: 'Gilbert', x: 6100, y: 500, dialogue: [["A single spark in the void...", "can illuminate what's important.", "Or what you didn't know was there."]] },
+            { name: 'Grant', x: -2200, y: 5800, dialogue: [["Where does the river go?", "It doesn't know either.", "Yet it flows."]] },
+            { name: 'Jill', x: 7800, y: -1200, dialogue: [["Empty vessels make the most sound.", "But silence has its own voice.", "Listen carefully."]] },
+            { name: 'Vivi', x: -8200, y: 2400, dialogue: [["Between what is seen and unseen,", "lies everything that matters.", "You see that right?"]] },
+            { name: 'Walter', x: 1300, y: -6700, dialogue: [["A flame needs no permission to burn.", "Neither do you.", "Shine."]] },
+            { name: 'Paul', x: -4800, y: -7200, dialogue: [["We are all ghosts of who we were.", "And promises of who we'll become.", "Which are you today?"]] },
+            { name: 'Specter', x: 5600, y: 4400, dialogue: [["You don't feel the Chain...", "if you don't go past it's reach.", "I never understood that..."]] },
+            { name: 'Will', x: -6900, y: 6100, dialogue: [["Do you fear what you cannot see?", "Or what you cannot understand?", "They are not always the same."]] },
+            { name: 'Flick', x: 8500, y: -5300, dialogue: [["Stars die so that new ones may die.", "Endings are beginnings to new endings.", "Constant demise... hmm..."]] },
+            { name: 'Shirley', x: -1700, y: -8900, dialogue: [["Light bends around heavy things.", "So does time.", "So does fate."]] },
+            { name: 'Hague', x: 3800, y: 7600, dialogue: [["Clarity is overrated.", "Sometimes the blur reveals more.", "Let your eyes unfocus."]] },
+            { name: 'Umbra', x: -9100, y: -1500, dialogue: [["Every shadow proves the existence of light.", "You cast a long shadow.", "That means something."]] },
+            { name: 'Bruce', x: 9400, y: 2800, dialogue: [["Water remembers every shape it takes.", "So do you.", "Every form was real."]] },
+            { name: 'Tracy', x: -3600, y: 9200, dialogue: [["Footprints fade but paths remain.", "You are walking an ancient road.", "Others walked it too."]] },
+            { name: 'Rem', x: 700, y: -9600, dialogue: [["What remains when all else is gone?", "The question itself.", "And that is enough."]] },
+            { name: 'Fan', x: -7400, y: -5800, dialogue: [["Almost there...", "Almost there...", "You've always been almost there."]] },
+            { name: 'Gor', x: 6800, y: -7100, dialogue: [["Wrap your wounds gently.", "Time does the healing.", "You do the living."]] },
+            { name: 'Pal', x: -8800, y: 4700, dialogue: [["Into the light...", "the dim glow...", "let's see..."]] },
+            { name: 'Dim', x: 4500, y: 9100, dialogue: [["The dimmest light can guide you home.", "If you look closely.", "Don't lose your focus."]] },
+            { name: 'Marco', x: -2900, y: -3400, dialogue: [["In murky waters, fish still swim.", "In uncertain times, life persists.", "So does everything."]] },
+            { name: 'Blaine', x: 1900, y: 4900, dialogue: [["Focus on everything and see nothing.", "Focus on nothing and see nothing.", "We're blind, you see..."]] },
+            { name: 'Sham', x: -5200, y: 7800, dialogue: [["What you hide from others,", "you sometimes hide from yourself.", "What are you hiding?"]] },
+            { name: 'Dusk', x: 7200, y: 1600, dialogue: [["Between day and night,", "there's a moment of perfect balance.", "It never lasts."]] },
+            { name: 'Dawn', x: -900, y: -2100, dialogue: [["Every morning is the world saying:", "'Try again.'", "You're not gone yet..."]] },
+            { name: 'Twilight', x: 3200, y: -4500, dialogue: [["In the end, nothing is certain.", "That's what makes it magical.", "Embrace uncertainty."]] },
+            { name: 'Ellie', x: -6400, y: 900, dialogue: [["The gloaming holds secrets.", "Whispered between sunset and stars.", "I'll share one: (6,000, 400)."]] },
+            { name: 'Pen', x: 9800, y: -3700, dialogue: [["Partial shadow, partial light.", "That's where most of us live.", "It's okay."]] },
+            { name: 'Silma', x: -4100, y: -6500, dialogue: [["Your outline tells a story.", "A perfect circle.", "Good story."]] },
+            { name: 'Doe', x: 2100, y: 6300, dialogue: [["I'll follow you everywhere.", "Not to haunt, but to remind:", "You are never truly alone."]] },
+            { name: 'Nimbus', x: -7700, y: 3500, dialogue: [["Clouds carry water for the thirsty earth.", "You carry things too.", "On your head, and in your head."]] },
+            { name: 'Cordova', x: 5900, y: -8400, dialogue: [["The sun's crown is visible in an eclipse.", "Light shows in darkness.", "I don't fear this ending..."]] },
+            { name: 'Matt', x: -1400, y: 8500, dialogue: [["Light bends around you.", "Not because you're holy,", "but because you matter."]] },
+            { name: 'Aurora', x: 8100, y: 5200, dialogue: [["Everyone has a color only spirits see.", "Yours is...", "...exactly what it should be."]] },
+            { name: 'Gem', x: -9500, y: -8100, dialogue: [["A gleam in the dark is enough.", "To remind you that somewhere,", "light still exists."]] },
+            { name: 'Linda', x: 400, y: 2600, dialogue: [["Things lose their shine.", "But shine can be restored.", "Nothing shines in the dark anyway."]] },
+            { name: 'Sheen', x: -3800, y: 4200, dialogue: [["The surface reflects what approaches.", "Approach with kindness.", "See kindness reflected."]] },
+            { name: 'Goss', x: 6500, y: -1900, dialogue: [["Sometimes we paint over rough edges.", "That's not dishonest.", "That's good taste mama."]] },
+            { name: 'Pol', x: -5900, y: -2700, dialogue: [["How many skips does the stone get...", "How long before it sinks?.", "Maybe 8 at best..."]] },
+            { name: 'Pat', x: 2800, y: -7800, dialogue: [["Age leaves marks.", "Those marks...", "They show your progress..."]] },
+            { name: 'Tarn', x: -800, y: 7100, dialogue: [["Silver tarnishes in air.", "It's still silver.", "You're still you."]] },
+            { name: 'Rusty', x: 4900, y: 3700, dialogue: [["Even rust has purpose.", "It returns metal to the earth.", "Every ending feeds a beginning."]] },
+            { name: 'Xi', x: -7100, y: -4400, dialogue: [["Change is just chemistry.", "Atoms rearranging.", "You're rearranging too."]] },
+            { name: 'Cord', x: 9100, y: -600, dialogue: [["What seemed like destruction...", "was transformation.", "I've let old forms fall away..."]] },
+            { name: 'Ern', x: -2500, y: 9600, dialogue: [["Water shapes stone through persistence.", "Not force.", "I was persistent."]] },
+            { name: 'Bill', x: 7500, y: 8400, dialogue: [["Sugar dissolves but sweetness spreads...", "I let myself spread.", "I touched everything."]] },
+            { name: 'Cody', x: -4500, y: 1300, dialogue: [["Light diffuses through clouds.", "Becoming softer, wider.", "Reaching further..."]] },
+            { name: 'Scar', x: 1600, y: -5100, dialogue: [["Seeds scatter on the wind.", "Not lost, but distributed.", "I planted something."]] },
+            { name: 'Cod', x: -6200, y: 5400, dialogue: [["A crowd disperses but the gathering happened.", "Moments end but they existed.", "That's enough."]] },
+            { name: 'Manus', x: 3500, y: 1100, dialogue: [["Broken mirrors reflect more angles.", "Fragmentation isn't failure.", "It's multiplication."]] },
+            { name: 'Splinda', x: -9800, y: 6800, dialogue: [["A splinter proves the wood was strong.", "My pain proves I felt.", "Feeling is living."]] },
+            { name: 'Shay', x: 8800, y: -9200, dialogue: [["A shard of glass still reflects.", "A piece of me still shines.", "No matter how small..."]] },
+            { name: 'Cookie', x: -1100, y: -4800, dialogue: [["Mountains crumble to make soil.", "Empires crumble to make room.", "Crumbling makes space."]] },
+            { name: 'Deacon', x: 5300, y: 6700, dialogue: [["Decay feeds the forest.", "Your old self feeds your new self.", "Nothing is wasted."]] },
+            { name: 'Withers', x: -8500, y: -700, dialogue: [["Flowers wither so seeds can form.", "Sometimes you must shrink.", "To prepare to grow."]] },
+            { name: 'Wilt', x: 600, y: 8900, dialogue: [["A thirsty plant needs water, not judgment.", "That's all I needed too.", "But I judgement was all I got..."]] },
+            { name: 'Prat', x: -3300, y: -9400, dialogue: [["Fading is not disappearing.", "It's becoming subtle.", "Subtlety has power."]] },
+            { name: 'Trent', x: 7900, y: 400, dialogue: [["The moon wanes... but it's still the moon.", "You can shrink without losing yourself.", "Cycles are natural."]] },
+            { name: 'Bee', x: -5700, y: 2100, dialogue: [["Tides ebb to flow again.", "Any withdrawal is preparation.", "The surge will come."]] },
+            { name: 'Reed', x: 4100, y: -3200, dialogue: [["Glaciers recede slowly.", "Revealing ancient ground.", "What will your retreat reveal?"]] },
+            { name: 'Red', x: -9300, y: -5100, dialogue: [["Strategic retreat saves armies.", "Stepping back isn't defeat.", "It's wisdom."]] },
+            { name: 'Howard', x: 2400, y: 5600, dialogue: [["Sometimes I had to hide.", "Not every battle needs fighting.", "I chose my moments..."]] },
+            { name: 'Abe', x: -6700, y: 8200, dialogue: [["Absence makes the heart grow fonder...", "Perhaps I've been absent from myself.", "Hmm... maybe that's right..."]] },
+            { name: 'Vant', x: 9600, y: -4000, dialogue: [["A vacant room awaits furniture.", "A vacant mind can house new ideas.", "Emptiness ain't so bad..."]] },
+            { name: 'Vod', x: -1900, y: 3800, dialogue: [["The end isn't nothing.", "It's everything that hasn't happened yet.", "You came from here..."]] },
+            { name: 'Em', x: 6200, y: 2300, dialogue: [["You can't fit more...", "into a cup that's overflowing...", "Pace yourself friend..."]] },
+            { name: 'Firth', x: -4200, y: -1800, dialogue: [["A blank page holds no stories.", "Not until...", "You write it down..."]] },
+            { name: 'Ned', x: 3900, y: 9400, dialogue: [["Null isn't zero.", "It's the absence of measurement.", "Some things can't be counted."]] },
+            { name: 'Chuck', x: -8000, y: 4000, dialogue: [["Zero is the hero of mathematics.", "From nothing comes everything.", "You started from zero too... well 5 I guess..."]] },
+            { name: 'Cid', x: 1200, y: -2400, dialogue: [["A cipher hides meaning.", "But meaning is still there.", "Keep looking..."]] },
+            { name: 'Ed', x: -5000, y: -8600, dialogue: [["Maybe an enigma isn't meant to be solved.", "Maybe it's just meant to be wondered at...", "Hmm... I wonder..."]] },
+            { name: 'Rick', x: 8400, y: 7100, dialogue: [["Behaviorism implies that the framework of a choice", "is mostly determined by", "a selection of adjacent choices... wow..."]] },
+            { name: 'Tom', x: -2700, y: 6500, dialogue: [["Mystery isn't a problem.", "It's an invitation.", "Accept it."]] },
+            { name: 'Cesar', x: 7100, y: -5700, dialogue: [["I know a secret about you.", "You're doing better than you think.", "That's the secret."]] },
+            { name: 'Finch', x: -7600, y: 1700, dialogue: [["What's hidden isn't gone.", "Just waiting to be found."]] },
+            { name: 'Brenda', x: 500, y: 4300, dialogue: [["Obscure paths lead to secret places.", "Not everyone goes there.", "I'm talking about (-7,000, 10,000)."]] },
+            { name: 'Earnest', x: -9000, y: -3900, dialogue: [["The unknown isn't always dangerous.", "It's just unexplored.", "But... I guess that didn't work out for me too good."]] },
+            { name: 'Burt', x: 5100, y: -700, dialogue: [["So much goes unseen.", "But it still happens.", "So much stuff. All the time."]] },
+            { name: 'Irving', x: -3500, y: 8800, dialogue: [["Invisible forces move the world.", "Gravity. Electromagnetism. Ghosts.", "I guess I'm partially visible..."]] },
+            { name: 'Ingrid', x: 9900, y: 3100, dialogue: [["The intangible things matter most.", "You can't hold love.", "But you can feel it."]] },
+            { name: 'Emily', x: -6000, y: -6800, dialogue: [["Ethereal beings have no weight.", "But we have presence.", "And effect."]] },
+            { name: 'Amber', x: 2700, y: -9100, dialogue: [["Sometimes this feels like a dream.", "Sometimes...", "I want to wake up..."]] },
+            { name: 'Cosmo', x: -1600, y: 2900, dialogue: [["The big empty doesn't care.", "But that's freedom.", "Nothing expects nothing."]] },
+            { name: 'Stella', x: 6600, y: 5900, dialogue: [["Do you believe in ghosts?", "Maybe I'm a ghost?", "Heh... as if..."]] },
+            { name: 'Luna', x: -8300, y: -2200, dialogue: [["The moon controls the tides.", "What controls you?", "Make sure it's something good."]] },
+            { name: 'Sunny', x: 4700, y: 8000, dialogue: [["The sun gives without expecting.", "So warm...", "So... bright."]] },
+            { name: 'Celeste', x: -4700, y: 4800, dialogue: [["Everything follows a pattern.", "So do you.", "Even if you don't see it."]] },
+            { name: 'Francis', x: 8700, y: -8800, dialogue: [["Joy is in the small things.", "A kind word. A patient moment.", "A funny little game."]] },
+            { name: 'Hue', x: -300, y: -7500, dialogue: [["What do you hold sacred?", "Hold it close.", "But not too tight."]] },
+            { name: 'Bianca', x: 3100, y: 3400, dialogue: [["Blessings aren't earned.", "They're noticed.", "Are you blessed?"]] },
+            { name: 'Grace', x: -7200, y: 7400, dialogue: [["What's the point of worrying.", "Things work themselves out.", "The sand settles."]] },
+            { name: 'Mercy', x: 9200, y: 900, dialogue: [["Be merciful to yourself.", "You're doing something hard.", "Living is hard."]] },
+            { name: 'Sylvia', x: -5400, y: -5500, dialogue: [["I offer you solace.", "Not answers, just my brief presence.", "Isn't that enough?"]] },
+            { name: 'Greg', x: 1800, y: 7700, dialogue: [["Comfort isn't weakness.", "It's recovery.", "Rest and return stronger."]] },
+            { name: 'Pike', x: -9700, y: 5500, dialogue: [["Peace isn't the absence of conflict.", "It's the presence of acceptance.", "Accept what is."]] }
+        ].map((g, i) => ({
+            ...g,
+            radius: 12,
+            color: '#000',
+            outlineColor: '#fff',
+            opacity: 0.25,
+            isGhost: true, // Mark as ghost for dialogue handling
+            hasBeenTalkedTo: false,
+            isFading: false,
+            fadeTimer: 0,
+            behaviorState: 'idle',
+            idleTimer: Math.random() * 900, // Start with random idle time (0-15 seconds)
+            targetX: g.x,
+            targetY: g.y,
+            trail: [] // For wispy trail effect
+        }));
+
+        // Track remaining visible ghosts
+        let visibleGhostsCount = ghosts.length;
 
         // Skill database
         const skills = {
@@ -1759,6 +1919,15 @@
                 hasWorkTools: game.hasWorkTools,
                 hasMaxFulfillmentCoin: game.hasMaxFulfillmentCoin,
                 hasAirOfConfidence: game.hasAirOfConfidence,
+                canSeeGhosts: game.canSeeGhosts,
+                ghosts: ghosts.map(ghost => ({
+                    name: ghost.name,
+                    hasBeenTalkedTo: ghost.hasBeenTalkedTo,
+                    opacity: ghost.opacity,
+                    x: ghost.x,
+                    y: ghost.y
+                })),
+                visibleGhostsCount: visibleGhostsCount,
                 npcs: npcs.map(npc => ({
                     name: npc.name,
                     itemGiven: npc.itemGiven,
@@ -1784,6 +1953,10 @@
                     isBeingCarried: npc.isBeingCarried || false,
                     hasBeenCarried: npc.hasBeenCarried || false,
                     inPond: npc.inPond || false,
+                    // Deek state
+                    isFleeing: npc.isFleeing || false,
+                    hasReachedDestination: npc.hasReachedDestination || false,
+                    declinedApology: npc.declinedApology || false,
                     x: npc.x,
                     y: npc.y
                 })),
@@ -1883,6 +2056,27 @@
                 game.hasWorkTools = saveData.hasWorkTools || false;
                 game.hasMaxFulfillmentCoin = saveData.hasMaxFulfillmentCoin || false;
                 game.hasAirOfConfidence = saveData.hasAirOfConfidence || false;
+                game.canSeeGhosts = saveData.canSeeGhosts || false;
+
+                // Restore ghost states
+                if (saveData.ghosts) {
+                    saveData.ghosts.forEach(savedGhost => {
+                        const ghost = ghosts.find(g => g.name === savedGhost.name);
+                        if (ghost) {
+                            ghost.hasBeenTalkedTo = savedGhost.hasBeenTalkedTo;
+                            ghost.opacity = savedGhost.opacity;
+                            ghost.x = savedGhost.x;
+                            ghost.y = savedGhost.y;
+                            // If ghost was fully faded, ensure it stays that way
+                            if (ghost.hasBeenTalkedTo && ghost.opacity <= 0) {
+                                ghost.isFading = false;
+                            }
+                        }
+                    });
+                }
+                if (saveData.visibleGhostsCount !== undefined) {
+                    visibleGhostsCount = saveData.visibleGhostsCount;
+                }
 
                 // Restore NPC states
                 saveData.npcs.forEach(savedNpc => {
@@ -1940,6 +2134,16 @@
                         }
                         if (savedNpc.inPond !== undefined) {
                             npc.inPond = savedNpc.inPond;
+                        }
+                        // Restore Deek's state
+                        if (savedNpc.isFleeing !== undefined) {
+                            npc.isFleeing = savedNpc.isFleeing;
+                        }
+                        if (savedNpc.hasReachedDestination !== undefined) {
+                            npc.hasReachedDestination = savedNpc.hasReachedDestination;
+                        }
+                        if (savedNpc.declinedApology !== undefined) {
+                            npc.declinedApology = savedNpc.declinedApology;
                         }
                         if (savedNpc.x !== undefined) {
                             npc.x = savedNpc.x;
@@ -2273,8 +2477,8 @@
             coins.push(spawnCoin(maxReach * 0.7, maxReach * 0.95));
 
             // Spawn many random coins at various distances
-            for (let i = 0; i < 200; i++) {
-                coins.push(spawnCoin(100, 2500));
+            for (let i = 0; i < 300; i++) {
+                coins.push(spawnCoin(100, 3500));
             }
         }
 
@@ -2799,6 +3003,11 @@
                 return;
             }
 
+            // Deek won't talk until he reaches his destination
+            if (npc.name === 'Deek' && !npc.hasReachedDestination) {
+                return;
+            }
+
             dialogue.active = true;
             dialogue.npc = npc;
             dialogue.currentPage = 0;
@@ -3033,6 +3242,19 @@
                     currentPages = npc.declinedDialogue;
                 } else if (totalCarrying >= modifiers.carryCapacity && npc.fullDialogue) {
                     currentPages = npc.fullDialogue;
+                } else {
+                    currentPages = npc.dialogue;
+                }
+            } else if (npc.name === 'Deek') {
+                // Deek's dialogue handling
+                if (npc.itemGiven) {
+                    currentPages = npc.completedDialogue;
+                } else if (npc.declinedApology) {
+                    currentPages = npc.declinedDialogue;
+                } else if (dialogue.showingYesDialogue && npc.yesDialogue) {
+                    currentPages = npc.yesDialogue;
+                } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                    currentPages = npc.declinedDialogue;
                 } else {
                     currentPages = npc.dialogue;
                 }
@@ -3303,6 +3525,27 @@
                         endDialogue();
                         return;
                     }
+                } else if (npc.name === 'Deek' && dialogue.choiceResult === 'yes' && !npc.itemGiven) {
+                    // Deek accepts apology - show yesDialogue then give item
+                    dialogue.currentPage = 0;
+                    dialogue.choiceResult = null;
+                    dialogue.showingYesDialogue = true;
+                    return;
+                } else if (npc.name === 'Deek' && dialogue.showingYesDialogue && !npc.itemGiven) {
+                    // End of Deek's yesDialogue - give item
+                    giveItemToPlayer(npc);
+                    dialogue.currentPage = 0;
+                    dialogue.showingYesDialogue = false;
+                    endDialogue();
+                    return;
+                } else if (npc.name === 'Deek' && dialogue.choiceResult === 'no' && !npc.declinedApology) {
+                    // Deek doesn't accept apology - mark as permanently declined
+                    npc.declinedApology = true;
+                    npc.hasCompletedQuest = true;
+                    dialogue.currentPage = 0;
+                    dialogue.choiceResult = null;
+                    dialogue.showingDeclinedDialogue = true;
+                    return;
                 } else if (dialogue.choiceResult === 'no' && npc.declinedDialogue && !dialogue.showingDeclinedDialogue) {
                     // For declined choices - show declined dialogue (only transition once)
                     dialogue.currentPage = 0;
@@ -3509,6 +3752,19 @@
                 } else {
                     pages = npc.dialogue;
                 }
+            } else if (npc.name === 'Deek') {
+                // Deek's dialogue handling
+                if (npc.itemGiven) {
+                    pages = npc.completedDialogue;
+                } else if (npc.declinedApology) {
+                    pages = npc.declinedDialogue;
+                } else if (dialogue.showingYesDialogue && npc.yesDialogue) {
+                    pages = npc.yesDialogue;
+                } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                    pages = npc.declinedDialogue;
+                } else {
+                    pages = npc.dialogue;
+                }
             } else if (npc.itemGiven) {
                 pages = npc.completedDialogue;
             } else if (npc.isCollecting && npc.collectingDialogue) {
@@ -3601,6 +3857,13 @@
         }
 
         function endDialogue() {
+            // Check if this was a ghost - start fading
+            if (dialogue.npc && dialogue.npc.isGhost && !dialogue.npc.hasBeenTalkedTo) {
+                dialogue.npc.hasBeenTalkedTo = true;
+                dialogue.npc.isFading = true;
+                dialogue.npc.fadeTimer = 3; // 3 seconds to fade
+            }
+
             dialogue.active = false;
             dialogue.lastNpc = dialogue.npc; // Remember which NPC we just talked to
             dialogue.npc = null;
@@ -3754,6 +4017,21 @@
                     }
                     noodlesMusicPoint = null;
                 }
+            } else if (npc.itemType === 'mysteryItem') {
+                // Check if player has space
+                if (player.carryingItems.length >= modifiers.carryCapacity) {
+                    return;
+                }
+
+                // Add mystery item (weighs 1 like a regular item)
+                player.carryingItems.push({
+                    type: 'mysteryItem',
+                    name: npc.mysteryItemName || 'Strange Trinket',
+                    slowAmount: 1
+                });
+                npc.itemGiven = true;
+                npc.hasCompletedQuest = true;
+                audio.receivedGift.play();
             }
         }
 
@@ -4757,7 +5035,30 @@
                     }
                 }
 
-                // Reset lastNpc if player moved away from all NPCs
+                // Check ghost proximity for interactions (if player can see ghosts)
+                if (game.canSeeGhosts) {
+                    for (let ghost of ghosts) {
+                        // Skip ghosts that have been talked to
+                        if (ghost.hasBeenTalkedTo) continue;
+
+                        const dx = player.x - ghost.x;
+                        const dy = player.y - ghost.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+
+                        if (dist < player.radius + ghost.radius + 30 && isOnScreen(ghost.x, ghost.y)) {
+                            // Don't re-trigger if this is the ghost we just talked to
+                            if (dialogue.lastNpc === ghost) {
+                                continue;
+                            }
+
+                            // Start ghost dialogue
+                            startDialogue(ghost);
+                            return;
+                        }
+                    }
+                }
+
+                // Reset lastNpc if player moved away from all NPCs and ghosts
                 let nearAnyNpc = false;
                 for (let npc of npcs) {
                     const dx = player.x - npc.x;
@@ -4766,6 +5067,19 @@
                     if (dist < player.radius + npc.radius + 30) {
                         nearAnyNpc = true;
                         break;
+                    }
+                }
+                // Also check ghosts
+                if (!nearAnyNpc && game.canSeeGhosts) {
+                    for (let ghost of ghosts) {
+                        if (ghost.hasBeenTalkedTo) continue;
+                        const dx = player.x - ghost.x;
+                        const dy = player.y - ghost.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < player.radius + ghost.radius + 30) {
+                            nearAnyNpc = true;
+                            break;
+                        }
                     }
                 }
                 if (!nearAnyNpc) {
@@ -4914,6 +5228,17 @@
 
                             audio.depositSpecial.currentTime = 0;
                             audio.depositSpecial.play();
+
+                        } else if (item.type === 'mysteryItem') {
+                            // Mystery item - enables ghost sight
+                            game.canSeeGhosts = true;
+                            game.currentAbilityText = 'Ghostly visions';
+                            game.showAbilityDisplay = true;
+                            game.abilityDisplayTimer = 0;
+                            game.paused = true;
+
+                            audio.depositSpecial.currentTime = 0;
+                            audio.depositSpecial.play();
                         }
 
                         // Remove the deposited item
@@ -5041,10 +5366,10 @@
 
             // Title: "Little Chain Game"
             ctx.fillStyle = '#fff';
-            ctx.font = '36px monospace';
+            ctx.font = '16px monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('The Chain Game', centerX, centerY - 150);
+            ctx.fillText('Little Chain Game', centerX, centerY - 150);
 
             // Version
             ctx.font = '16px monospace';
@@ -5390,6 +5715,65 @@
                 }
             }
 
+            // Draw ghosts (only if player can see them)
+            if (game.canSeeGhosts) {
+                for (let ghost of ghosts) {
+                    // Skip fully faded ghosts
+                    if (ghost.hasBeenTalkedTo && ghost.opacity <= 0) continue;
+
+                    const ghostScreen = worldToScreen(ghost.x, ghost.y);
+
+                    // Draw wispy trail (fading circles same size as ghost)
+                    for (let i = ghost.trail.length - 1; i >= 0; i--) {
+                        const t = ghost.trail[i];
+                        const tScreen = worldToScreen(t.x, t.y);
+                        const trailOpacity = (1 - t.age / 0.5) * ghost.opacity;
+
+                        ctx.globalAlpha = trailOpacity;
+                        ctx.fillStyle = ghost.color;
+                        ctx.beginPath();
+                        ctx.arc(tScreen.x, tScreen.y, ghost.radius * game.zoom, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = ghost.outlineColor;
+                        ctx.lineWidth = 2 * game.zoom;
+                        ctx.stroke();
+                    }
+                    ctx.globalAlpha = 1.0;
+
+                    // Draw ghost body with opacity
+                    ctx.globalAlpha = ghost.opacity;
+                    ctx.fillStyle = ghost.color;
+                    ctx.beginPath();
+                    ctx.arc(ghostScreen.x, ghostScreen.y, ghost.radius * game.zoom, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = ghost.outlineColor;
+                    ctx.lineWidth = 2 * game.zoom;
+                    ctx.stroke();
+                    ctx.globalAlpha = 1.0;
+
+                    // Draw wait circle above ghost if player is talking to them
+                    if (dialogue.active && dialogue.npc === ghost && dialogue.isWaiting) {
+                        ctx.globalAlpha = ghost.opacity;
+                        const waitY = ghostScreen.y - (ghost.radius + 25) * game.zoom;
+                        const waitRadius = 10 * game.zoom;
+                        const waitProgress = dialogue.waitTimer / dialogue.waitDuration;
+
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(ghostScreen.x, waitY, waitRadius, 0, Math.PI * 2);
+                        ctx.stroke();
+
+                        ctx.fillStyle = '#fff';
+                        ctx.beginPath();
+                        ctx.arc(ghostScreen.x, waitY, waitRadius, -Math.PI / 2, -Math.PI / 2 + waitProgress * Math.PI * 2);
+                        ctx.lineTo(ghostScreen.x, waitY);
+                        ctx.fill();
+                        ctx.globalAlpha = 1.0;
+                    }
+                }
+            }
+
             // Draw farm animals (triangles)
             for (let animal of farmAnimals) {
                 const animalScreen = worldToScreen(animal.x, animal.y);
@@ -5455,7 +5839,7 @@
 
                 ctx.fillStyle = '#fff';
                 ctx.beginPath();
-                ctx.arc(indicatorX, indicatorY, 5, 0, Math.PI * 2);
+                ctx.arc(indicatorX, indicatorY, 10, 0, Math.PI * 2);
                 ctx.fill();
             }
 
@@ -5656,6 +6040,19 @@
                         pages = npc.declinedDialogue;
                     } else if (totalCarrying >= modifiers.carryCapacity && npc.fullDialogue) {
                         pages = npc.fullDialogue;
+                    } else {
+                        pages = npc.dialogue;
+                    }
+                } else if (npc.name === 'Deek') {
+                    // Deek's dialogue handling
+                    if (npc.itemGiven) {
+                        pages = npc.completedDialogue;
+                    } else if (npc.declinedApology) {
+                        pages = npc.declinedDialogue;
+                    } else if (dialogue.showingYesDialogue && npc.yesDialogue) {
+                        pages = npc.yesDialogue;
+                    } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                        pages = npc.declinedDialogue;
                     } else {
                         pages = npc.dialogue;
                     }
@@ -6194,6 +6591,71 @@
             }
         }
 
+        // Update Ghost movement and fading
+        function updateGhosts() {
+            // Only update if player can see ghosts
+            if (!game.canSeeGhosts) return;
+
+            for (let ghost of ghosts) {
+                // Skip ghosts that have fully faded
+                if (ghost.hasBeenTalkedTo && ghost.opacity <= 0) continue;
+
+                // Handle fading
+                if (ghost.isFading) {
+                    ghost.fadeTimer -= 1/60; // Decrease by 1/60 second per frame
+                    ghost.opacity = Math.max(0, (ghost.fadeTimer / 3) * 0.25); // Fade from 0.25 to 0 over 3 seconds
+                    if (ghost.opacity <= 0) {
+                        ghost.isFading = false;
+                        visibleGhostsCount--;
+                    }
+                    continue; // Don't move while fading
+                }
+
+                // Update trail (store previous positions for wispy effect)
+                if (ghost.behaviorState !== 'idle') {
+                    ghost.trail.unshift({ x: ghost.x, y: ghost.y, age: 0 });
+                    if (ghost.trail.length > 10) ghost.trail.pop();
+                }
+                // Age and remove old trail points
+                for (let i = ghost.trail.length - 1; i >= 0; i--) {
+                    ghost.trail[i].age += 1/60;
+                    if (ghost.trail[i].age > 0.5) { // Trail lasts 0.5 seconds
+                        ghost.trail.splice(i, 1);
+                    }
+                }
+
+                // Movement behavior (similar to Brot's animals but with 15 second idle)
+                if (ghost.behaviorState === 'idle') {
+                    ghost.idleTimer -= 1;
+
+                    if (ghost.idleTimer <= 0) {
+                        // Start moving to a random nearby position
+                        ghost.behaviorState = 'moving';
+                        const angle = Math.random() * Math.PI * 2;
+                        const dist = 100 + Math.random() * 200; // Move 100-300 units
+                        ghost.targetX = ghost.x + Math.cos(angle) * dist;
+                        ghost.targetY = ghost.y + Math.sin(angle) * dist;
+                    }
+                } else {
+                    // Moving toward target
+                    const dx = ghost.targetX - ghost.x;
+                    const dy = ghost.targetY - ghost.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 5) {
+                        // Reached target, go idle for 15 seconds (900 frames at 60fps)
+                        ghost.behaviorState = 'idle';
+                        ghost.idleTimer = 900;
+                    } else {
+                        // Move toward target at speed 0.5
+                        const moveSpeed = 0.5;
+                        ghost.x += (dx / dist) * moveSpeed;
+                        ghost.y += (dy / dist) * moveSpeed;
+                    }
+                }
+            }
+        }
+
         // Update Brot's chain physics
         function updateBrotChain() {
             const brot = npcs.find(n => n.name === 'Brot');
@@ -6449,6 +6911,52 @@
             }
         }
 
+        // Update Deek's fleeing behavior
+        function updateDeek() {
+            const deek = npcs.find(n => n.name === 'Deek');
+            if (!deek) return;
+
+            // If Deek has reached his destination, don't move anymore
+            if (deek.hasReachedDestination) return;
+
+            // Calculate distance to player
+            const dxToPlayer = player.x - deek.x;
+            const dyToPlayer = player.y - deek.y;
+            const distToPlayer = Math.sqrt(dxToPlayer * dxToPlayer + dyToPlayer * dyToPlayer);
+
+            // Only flee when player is within fleeRadius
+            if (distToPlayer < deek.fleeRadius) {
+                deek.isFleeing = true;
+
+                const dxToDest = deek.fleeDestX - deek.x;
+                const dyToDest = deek.fleeDestY - deek.y;
+                const distToDest = Math.sqrt(dxToDest * dxToDest + dyToDest * dyToDest);
+
+                // Check if reached destination
+                if (distToDest < 10) {
+                    deek.hasReachedDestination = true;
+                    deek.isFleeing = false;
+                    deek.x = deek.fleeDestX;
+                    deek.y = deek.fleeDestY;
+                    return;
+                }
+
+                // Calculate player's current speed
+                const playerCurrentSpeed = player.baseSpeed * (1 + modifiers.moveSpeed);
+                // Deek moves at 1.2x player's current speed
+                const deekSpeed = playerCurrentSpeed * 1.1;
+
+                // Move toward destination
+                const moveX = (dxToDest / distToDest) * deekSpeed;
+                const moveY = (dyToDest / distToDest) * deekSpeed;
+                deek.x += moveX;
+                deek.y += moveY;
+            } else {
+                // Stop fleeing when player leaves the radius
+                deek.isFleeing = false;
+            }
+        }
+
         // Check for daily resets
         function checkDailyResets() {
             const now = new Date();
@@ -6533,6 +7041,24 @@
                 }
             }
 
+            // Also check for nearby ghosts (if player can see them)
+            if (game.canSeeGhosts && !game.nearbyNpc) {
+                for (let ghost of ghosts) {
+                    // Skip faded ghosts or ghosts that have been talked to
+                    if (ghost.hasBeenTalkedTo) continue;
+
+                    const dx = player.x - ghost.x;
+                    const dy = player.y - ghost.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < player.radius + ghost.radius + 30) {
+                        game.nearbyNpc = ghost;
+                        game.nearbyNpc.isGhost = true; // Mark as ghost for special handling
+                        break;
+                    }
+                }
+            }
+
             if (!game.paused) {
                 // Check daily resets
                 checkDailyResets();
@@ -6541,6 +7067,7 @@
                 checkAnimalRetrieval();
                 updateClint();
                 updateBim();
+                updateDeek();
 
                 updateCamera();
                 updatePost();
@@ -6555,6 +7082,7 @@
                 updateBrot();
                 updateBrotChain();
                 updateBrotAnimals();
+                updateGhosts();
                 checkBrotAnimalCapture();
                 updateNudgePhysics(1/60);
                 checkCoins();

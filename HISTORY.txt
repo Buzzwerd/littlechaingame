@@ -852,3 +852,89 @@ Credit: Created by Kevin Barrios (2025) (Bottom of the screen)
 
   5. Version Number:
   - Look for an existing version variable in the code
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.59 (Update title and version):
+
+Search: NPC's
+
+[NPC that runs away]
+
+Initial location: (500, 1800)
+Name: Deek
+Description: Deek is an NPC that runs away from the player when they approach him (radius 200). He is always faster than the player. He will continue running away towards (-1500,-3000) until he reaches that point. He will not return to his initialHe will not speak to the player until he gets there.
+
+Initial Dialogue: "What's your problem! Why are you following me!" "Who do you think you are chasing me down like I'm here for your amusement?" "Are you even sorry!?" - This is a yes or no question - reference NPCs.md - If the player says no - declinedDialogue= "Weirdo! Get out of here" this will become Deek's permanent dialogue. If the player says yes then Deek continues talking "Well... I do get you've got a Chain... still pursuing... you know, whatever it is... well I can understand that... so you probably chased me because I ran away... I didn't expect for you to follow me this far... but you're not so bad..." "Here, you can have this, I still haven't figured out what it does..." - Deek with then give the player a placeholder item.
+
+  Appearance:
+Same as other NPCS
+
+  Movement Behavior:
+1.2x
+  4. If the player is already near or at (-1500, -3000) when approaching Deek for the first time, what should happen? Should Deek run in a different direction first? This is an impossible scenario.
+  5. instant (immediately at full speed)
+
+  State & Saving:
+  6. Should Deek's current position be saved? Yes let's save it.
+  7. Once Deek reaches his destination, should he stay there permanently even after game restart? Yes
+
+  Visual/Audio Feedback:
+  8. Should there be any visual indication when Deek is fleeing? No just movement.
+  9. Should Deek say anything while running? (e.g., floating text like "Leave me alone!") No.
+
+  The Placeholder Item:
+  10. What type of item should this be? Options:
+      - A generic "mysterious item" that does nothing yet
+ 
+
+  Post-Dialogue:
+  11. After Deek gives the item, what should his permanent dialogue be? (Something friendly now that he's warmed up)
+
+  Requirements:
+  12. Does talking to Deek require any coins or items? No.
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.60 (Update title and version):
+
+[Ghost NPC's]
+
+If the player has the mysterious item from Deek they can see the Ghost NPC's. They appear instantly after depositing the item.
+
+Ghost NPC's are dialogue only and then disappear (fade to 0% opacity) after being talked to permanently. There are 100 ghosts in the game. Let's keep track of how many Ghosts are still visible. They are distributed all across the map up to 10,000+-. They shouldn't overlap other NPC's, but they can be nearby.
+
+Movement: Ghost NPC's move exactly like Brot's animals. When ghosts move they have a ghost trail.
+
+Appearance: Ghost NPC's are Black Circles with White outlines like other NPC's, but they're at 25% opacity. Ghosts do not show up on the work tools NPC sensor.
+
+Generate the Ghosts and generate placeholder dialogue for all the Ghosts. The ghosts all reassure the player and offer platitudes, poetry, and deep questions.
+
+Appearance:
+  1. Standard NPC radius (12) or different size? Standard size.
+  2. For the ghost trail when moving - what should it look like? (fading circles behind them, a wispy line, etc.) Let's try a wispy line.
+
+  Distribution:
+  3. Should ghosts be procedurally generated with random positions at game start, or fixed positions? Fixed positions.
+  4. What's the minimum distance ghosts should keep from regular NPCs? Keep them 200 units away.
+
+  Dialogue:
+  5. Should each of the 100 ghosts have unique dialogue, or pull randomly from a shared pool of phrases? Each is a unique ghost with a unique name.
+  6. How many lines per ghost dialogue? (1 page of 3 lines like other NPCs?) Up to 5 pages, usually 1 or 2.
+
+  Behavior:
+  7. How fast should ghosts fade out after being talked to? (instant, 1 second, gradual over several seconds?) Fade over 3 seconds.
+  8. Can the player talk to a ghost multiple times before it fades, or does it fade immediately after one conversation? Fades immediately after one conversation.
+  9. Are ghosts solid (block player) or can the player walk through them? The player can walk through them like all other NPC's.
+
+  Visibility Tracking:
+  10. Should "X ghosts remaining" be displayed somewhere on screen, or just tracked internally? Just internally.
+
+  Persistence:
+  11. Should ghost states (which have been talked to/faded) be saved and loaded? Yes save the ghosts state.
+  12. After depositing the Strange Trinket, can the player see ghosts forever, or only while the trinket effect is "active"? Forever.
+
+  Movement:
+  13. Should ghosts move constantly like Brot's animals, or only sometimes? Should they have idle periods? They should have idle periods of 15 seconds.
+
+
