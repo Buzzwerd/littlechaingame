@@ -938,3 +938,75 @@ Appearance:
   13. Should ghosts move constantly like Brot's animals, or only sometimes? Should they have idle periods? They should have idle periods of 15 seconds.
 
 
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. Read the documentation. We're now on v0.61 (Update title and version):
+
+Let's improve the Bim NPC. His followingDialogue should include the same information from his helpingDialogue but he should say "we" instead of you.
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. Read the documentation. We're now on v0.62:
+
+[Very important NPC]
+
+Name: Ob
+Type: Chained NPC
+Location: 0, 10,000
+Post Location: 0, 10,500
+Appearance/Radius: Same as every other NPC.
+Description: Ob has a very long chain 999 links. It spirals outwards around him in a tight coil. Ob does not collect coins.
+Dialogue: Ob's dialogue is special. Ob lists different things the player has accomplished so far, and finishes by saying "Come back when your chain is as long as my own. 999 links. Then... I will give you the Freedom I cannot have."
+
+Ob starts by saying "Hmm... you've come a long way... let me look at you..." This is a yes or no question.
+If the player selects yes: Ob will begin listing everything the player has collected so far and who they got it from, for example "You have received the Feeling of Fulfillment from Quincy". He will also tell the player; how many NPC's they've talked to, How many ghosts they've talked to, how many days and nights since the player started playing, the number of NPC's following the player, and finally how many links long their chain is. Each accomplishment should be its own page of dialogue. If the player says no, Ob says "Hmm... then I will turn my gaze inward... come back when you're ready to know yourself." The player can talk to them again.
+
+If the player has 999 links, Ob will still say all this dialogue, but at the end instead of saying "Come back when your chain is as long as my own. 999 links. Then... I will give you the Freedom I cannot have.", he will say "Ah... at last... here... the Freedom which is not my own... but which I can give" - he will then give the player the NPC item "Freedom".
+
+Create the Freedom item: The player can take this item back to their post, it will remove their chain entirely.
+
+Additional features: Once the player is at 999 links, they can no longer deposit coins or diamonds at their starting post. 999 is the limit.
+
+Dialogue Structure:
+  1. When Ob lists items the player has collected, should he list ALL items (abilities, diamonds, music disks) or just abilities? For example, would he say "You have received a White Diamond from Momo"? ALL items should be listed.
+  2. For items that don't come from NPCs (like coins from work), should those be mentioned? Don't mention those.
+  3. Should each accomplishment type be its own page, or each individual item? For example:
+    - Option A: One page per item ("You received X from Y", next page "You received Z from W")
+
+  Chain Spiral Visual:
+  4. How tight should the coil be? Should I base it on existing chained NPCs like Clint, or make it tighter/different? It should visually look like a logarithmic spiral.
+
+  Freedom Item:
+  5. When the player deposits Freedom at their post, should:
+  - The chain disappear immediately with some visual effect? Yes
+  - The player be completely free to move anywhere without constraints? Yes
+  - The post disappear too, or remain as a landmark? The post will remain.
+
+  6. After using Freedom, can the player still deposit coins/diamonds, or is the game essentially "complete"? No they cannot deposit coins/diamonds. The game is essentially complete, but can still deposit other NPC items.
+
+  Days/Nights Tracking:
+  7. Is there already a day/night counter in the game, or do I need to add one? (I'll check the code, but want to confirm if you have a preference) It needs to be added.
+
+  999 Link Limit:
+  8. When at 999 links and trying to deposit, should there be a message explaining why they can't, or just silently not work? Just silently not work.
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. Read the documentation. We're now on v0.63:
+
+[New NPC thats gives New Item] + [Fishing Minigame]
+
+Name: Max
+Location: 2000, 4000
+Appearance/Radius: Same as every other NPC
+Dialogue: "Man... I used to love fishing... before we fished all the fish... not as fun now, all I ever find are coins... here, you can have my Fishing Rod... It's no use to me anymore..." - generate the rest.
+Personality: Nostalgic, used to love fishing
+Gives item: Fishing Rod
+
+Fishing Rod Item:
+Normal NPC item appearance - carried as normal.
+Item Description: Once the player deposits the fishing rod - when they walk within a pond area, if they are carrying less than 10 coins they will occasionally  (within intervals of 10 seconds - 2 minutes) receive a coin. The coin is carried as normal.
+
+Additional: Add a very large pond near Max.
+
+

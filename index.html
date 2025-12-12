@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chain Game v0.60</title>
+    <title>Chain Game v0.63</title>
     <style>
         body {
             margin: 0;
@@ -29,7 +29,7 @@
 
     <script>
         /*
-         * Chain Game v0.60
+         * Chain Game v0.63
          * Hold Up+Down arrow keys for 500ms to switch between collected music disks (including Silence)
          */
 
@@ -37,7 +37,7 @@
         const ctx = canvas.getContext('2d');
 
         // Version
-        const GAME_VERSION = '0.60';
+        const GAME_VERSION = '0.63';
 
         // Title screen state
         const titleScreen = {
@@ -71,6 +71,13 @@
             maxFulfillmentBoostActive: false,
             hasAirOfConfidence: false,
             canSeeGhosts: false, // Enabled after depositing Strange Trinket
+            hasFreedom: false, // Enabled after depositing Freedom - removes chain constraint
+            hasFishingRod: false, // Enabled after depositing Fishing Rod
+            fishingTimer: 0, // Current fishing timer countdown
+            fishingInterval: 0, // Current random interval (10-120 seconds)
+            dayNightCycles: 0, // Number of day/night transitions
+            lastDaytimeState: null, // Track previous daytime state for cycle counting
+            gameStartTime: Date.now(), // When the game started (for cycle tracking)
             userHasInteracted: false, // Prevents music until player presses arrow key
             nearbyNpc: null,
             keys: {
@@ -117,6 +124,7 @@
             showingNoDiamondDialogue: false, // Track if showing Ram's no diamond dialogue
             showingAcceptedHelp: false, // Track if showing Bim's accepted help dialogue
             showingYesDialogue: false, // Track if showing yes confirmation dialogue (Clint/Bim)
+            showingObAccomplishments: false, // Track if showing Ob's accomplishments dialogue
             lastNpc: null, // Track which NPC was just talked to
             cooldownTimer: 0
         };
@@ -1370,7 +1378,7 @@
                     ["If you ever find any animals out there...", "bring them to me?", "I'll make it worth your while."]
                 ],
                 oneAnimalDialogue: [
-                    ["Wait... is that... an animal?!", "A real, living, moving creature?!", "This is the best day of my entire chain life!"]
+                    ["Wait... is that... an animal?!", "A real, living, moving creature?!", "This is the best day of my entire Chain life!"]
                 ],
                 fiveAnimalsDialogue: [
                     ["Five little friends!", "They're so... wiggly.", "I love watching them waddle around."]
@@ -1379,14 +1387,14 @@
                     ["Ten animals! TEN!", "I'm practically a farmer now.", "Who needs coins when you have friends?"]
                 ],
                 twentyFiveAnimalsDialogue: [
-                    ["Twenty-five?! You're kidding me.", "I never thought I'd see so many.", "Are you some kind of animal wizard?"]
+                    ["Wow! So many cuties?! You're kidding me.", "I never thought I'd see so many.", "Are you some kind of animal wizard?"]
                 ],
                 fiftyAnimalsDialogue: [
-                    ["FIFTY ANIMALS!", "This is... this is everything.", "I have to give you something for this."],
+                    ["SO MANY ANIMALS!", "This is... this is everything.", "I have to give you something for this."],
                     ["Here, take this. I found it ages ago.", "It's heavy, but it's worth a fortune.", "Thank you... truly."]
                 ],
                 completedDialogue: [
-                    ["Wow, I can't believe it...", "a real flock...", "I think I'll get back to working on my Chain now."]
+                    ["Wow, I can't believe it...", "a real flock...", "I think I'll just chill now."]
                 ],
                 isChainedNPC: true,
                 targetCoinIndex: -1,
@@ -1431,7 +1439,10 @@
                     ["Bah... I guess I didn't wanna", "do all that work anyway."]
                 ],
                 followingDialogue: [
-                    ["This is so exciting!", "Who are we visiting next?"]
+                    ["Wow, so we've already met {metCount} people...", "Let's keep going!", "I heard there's someone we don't know {direction}."]
+                ],
+                followingAllMetDialogue: [
+                    ["Wow, we've met everyone!", "That's incredible!", "I can't believe we found them all!"]
                 ],
                 hasChoice: true,
                 hasAcceptedHelp: false,
@@ -1515,6 +1526,59 @@
                 requiresCoins: 0,
                 itemType: 'mysteryItem',
                 mysteryItemName: 'Strange Trinket'
+            },
+            {
+                name: 'Ob',
+                x: 0,
+                y: 10000,
+                radius: 12,
+                color: '#000',
+                outlineColor: '#fff',
+                dialogue: [
+                    ["Hmm... you've come a long way...", "let me look at you...", "(Up for yes, Down for no)"]
+                ],
+                declinedDialogue: [
+                    ["Hmm... then I will turn my gaze inward...", "come back when you're ready", "to know yourself."]
+                ],
+                // Dynamic dialogues will be generated based on player accomplishments
+                yesDialogue: [], // Will be populated dynamically
+                completedDialogue: [
+                    ["..."]
+                ],
+                notReadyDialogue: [
+                    ["Come back when your chain", "is as long as my own.", "999 links."],
+                    ["Then...", "I will give you the Freedom", "I cannot have."]
+                ],
+                readyDialogue: [
+                    ["Ah... at last...", "here...", "the Freedom which is not my own..."],
+                    ["...but which I can give."]
+                ],
+                hasChoice: true,
+                hasCompletedQuest: false,
+                itemGiven: false,
+                isChainedNPC: true,
+                requiresCoins: 0,
+                itemType: 'freedom'
+            },
+            {
+                name: 'Max',
+                x: 2000,
+                y: 4000,
+                radius: 12,
+                color: '#000',
+                outlineColor: '#fff',
+                dialogue: [
+                    ["Man... I used to love fishing...", "before we fished all the fish...", "not as fun now..."],
+                    ["All I ever find are coins...", "here, you can have my Fishing Rod...", "It's no use to me anymore..."]
+                ],
+                completedDialogue: [
+                    ["*stares wistfully at the water*", "I miss the old days...", ""]
+                ],
+                hasChoice: false,
+                hasCompletedQuest: false,
+                itemGiven: false,
+                requiresCoins: 0,
+                itemType: 'fishingRod'
             }
         ];
 
@@ -1563,6 +1627,24 @@
 
         // Animals that have been captured by Brot (permanent)
         const brotAnimals = [];
+
+        // Ob's post (for chained NPC) - far south
+        const obPost = {
+            x: 0,
+            y: 10500,
+            baseRadius: 15,
+            radius: 15,
+            color: '#fff',
+            alpha: 1.0,
+            pulseTime: 0
+        };
+
+        // Ob's chain (999 links in a logarithmic spiral)
+        const obChain = {
+            links: 999,
+            linkLength: 20,
+            segments: []
+        };
 
         // Ghost NPCs - only visible after depositing Strange Trinket
         const ghosts = [
@@ -1853,6 +1935,59 @@
             }
         }
 
+        function initObChain() {
+            obChain.segments = [];
+
+            // Create a logarithmic spiral from Ob outward to post
+            // Ob is at (0, 10000), post is at (0, 10500)
+            // The spiral coils tightly around Ob and ends at the post
+
+            const ob = npcs.find(n => n.name === 'Ob');
+            const obX = ob ? ob.x : 0;
+            const obY = ob ? ob.y : 10000;
+
+            // Post is 500 units south of Ob
+            const postX = obPost.x;
+            const postY = obPost.y;
+
+            // Logarithmic spiral: r = a * e^(b * θ)
+            // We need the final radius to reach the post (500 units away)
+            const totalRotations = 8;  // Number of full rotations
+            const startRadius = 10;  // Starting radius (tight coil around Ob)
+            const endRadius = 500;   // End radius (distance to post)
+
+            // Calculate the angle to the post from Ob
+            const angleToPost = Math.atan2(postY - obY, postX - obX);  // Should be PI/2 (south)
+
+            // We want the spiral to end pointing at the post
+            // Final theta + startAngle should equal angleToPost
+            // So startAngle = angleToPost - maxTheta (mod 2PI doesn't matter for cos/sin)
+            const maxTheta = totalRotations * 2 * Math.PI;
+            const startAngle = angleToPost - maxTheta;
+
+            // Calculate b so that: endRadius = startRadius * e^(b * maxTheta)
+            const b = Math.log(endRadius / startRadius) / maxTheta;
+
+            for (let i = 0; i <= obChain.links; i++) {
+                const t = i / obChain.links;
+                const theta = t * maxTheta;
+
+                // Logarithmic spiral formula
+                const r = startRadius * Math.exp(b * theta);
+
+                // Spiral outward from Ob's position
+                const x = obX + r * Math.cos(theta + startAngle);
+                const y = obY + r * Math.sin(theta + startAngle);
+
+                obChain.segments.push({ x, y });
+            }
+
+            // Ensure the last segment is exactly at the post
+            if (obChain.segments.length > 0) {
+                obChain.segments[obChain.segments.length - 1] = { x: postX, y: postY };
+            }
+        }
+
         // Coins
         const coins = [];
 
@@ -1920,6 +2055,10 @@
                 hasMaxFulfillmentCoin: game.hasMaxFulfillmentCoin,
                 hasAirOfConfidence: game.hasAirOfConfidence,
                 canSeeGhosts: game.canSeeGhosts,
+                hasFreedom: game.hasFreedom,
+                hasFishingRod: game.hasFishingRod,
+                dayNightCycles: game.dayNightCycles,
+                gameStartTime: game.gameStartTime,
                 ghosts: ghosts.map(ghost => ({
                     name: ghost.name,
                     hasBeenTalkedTo: ghost.hasBeenTalkedTo,
@@ -2057,6 +2196,10 @@
                 game.hasMaxFulfillmentCoin = saveData.hasMaxFulfillmentCoin || false;
                 game.hasAirOfConfidence = saveData.hasAirOfConfidence || false;
                 game.canSeeGhosts = saveData.canSeeGhosts || false;
+                game.hasFreedom = saveData.hasFreedom || false;
+                game.hasFishingRod = saveData.hasFishingRod || false;
+                game.dayNightCycles = saveData.dayNightCycles || 0;
+                game.gameStartTime = saveData.gameStartTime || Date.now();
 
                 // Restore ghost states
                 if (saveData.ghosts) {
@@ -2592,6 +2735,14 @@
                     });
                 }
             }
+
+            // Large pond near Max (the fisherman)
+            puddles.push({
+                x: 2000,
+                y: 4200,
+                radius: 850,
+                playerInside: false
+            });
         }
 
         // Update visual elements
@@ -2676,6 +2827,37 @@
                         alpha: 0.5,
                         duration: 120 + Math.random() * 60 // frames to complete
                     });
+                }
+            }
+
+            // Fishing mechanic - catch coins while in ponds
+            if (game.hasFishingRod) {
+                // Check if player is in any puddle
+                const playerInAnyPuddle = puddles.some(p => p.playerInside);
+
+                if (playerInAnyPuddle && player.carryingCoins.length < 10) {
+                    game.fishingTimer += 1/60; // Increment by frame time (assuming 60fps)
+
+                    if (game.fishingTimer >= game.fishingInterval) {
+                        // Catch a coin!
+                        player.carryingCoins.push({
+                            radius: 8,
+                            color: '#fff',
+                            collected: true
+                        });
+
+                        // Play pickup sound
+                        const sound = audio.pickupSounds[Math.floor(Math.random() * audio.pickupSounds.length)];
+                        sound.currentTime = 0;
+                        sound.play();
+
+                        // Reset timer with new random interval (10-120 seconds)
+                        game.fishingTimer = 0;
+                        game.fishingInterval = 10 + Math.random() * 110;
+                    }
+                } else {
+                    // Reset timer when not in puddle or at capacity
+                    game.fishingTimer = 0;
                 }
             }
 
@@ -3018,6 +3200,7 @@
             dialogue.showingNeedsWorkTools = false; // Reset needs work tools flag
             dialogue.showingAcceptedHelp = false; // Reset Bim accepted help flag
             dialogue.showingYesDialogue = false; // Reset yes dialogue flag
+            dialogue.showingObAccomplishments = false; // Reset Ob accomplishments flag
             game.paused = true;
 
             // Straum special handling
@@ -3046,6 +3229,11 @@
 
             // Weadon readyForBizDialogue is single-page with choice - set pendingChoice immediately
             if (npc.name === 'Weadon' && jobs.hasCourier && jobs.currentPackage === null && jobs.courierDeliveriesToday < 5) {
+                dialogue.pendingChoice = true;
+            }
+
+            // Ob's initial dialogue is single-page with choice - set pendingChoice immediately
+            if (npc.name === 'Ob' && !npc.itemGiven) {
                 dialogue.pendingChoice = true;
             }
         }
@@ -3170,7 +3358,34 @@
                 } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
                     currentPages = npc.declinedDialogue;
                 } else if (npc.isFollowing) {
-                    currentPages = npc.followingDialogue;
+                    // Count met NPCs and find nearest unmet for following dialogue
+                    const metCount = npcs.filter(n => n.hasCompletedQuest).length;
+                    const unmetNpcs = npcs.filter(n => !n.hasCompletedQuest && n.name !== 'Bim');
+                    if (unmetNpcs.length === 0) {
+                        currentPages = npc.followingAllMetDialogue;
+                    } else {
+                        // Find closest unmet NPC to player
+                        let nearest = null;
+                        let nearestDist = Infinity;
+                        for (let unmet of unmetNpcs) {
+                            const dx = unmet.x - player.x;
+                            const dy = unmet.y - player.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < nearestDist) {
+                                nearestDist = dist;
+                                nearest = unmet;
+                            }
+                        }
+                        const directionText = game.hasWorkTools
+                            ? `at (${Math.round(nearest.x)}, ${Math.round(nearest.y)})`
+                            : getDirectionString(nearest.x, nearest.y);
+                        currentPages = npc.followingDialogue.map(page =>
+                            page.map(line =>
+                                line.replace('{metCount}', metCount)
+                                    .replace('{direction}', directionText)
+                            )
+                        );
+                    }
                 } else if (npc.hasAcceptedHelp) {
                     // Count met NPCs (those with hasCompletedQuest)
                     const metCount = npcs.filter(n => n.hasCompletedQuest).length;
@@ -3255,6 +3470,25 @@
                     currentPages = npc.yesDialogue;
                 } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
                     currentPages = npc.declinedDialogue;
+                } else {
+                    currentPages = npc.dialogue;
+                }
+            } else if (npc.name === 'Ob') {
+                // Ob's dialogue handling
+                if (npc.itemGiven) {
+                    currentPages = npc.completedDialogue;
+                } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                    currentPages = npc.declinedDialogue;
+                } else if (dialogue.showingObAccomplishments) {
+                    // Generate dynamic accomplishments dialogue + ending
+                    const accomplishments = generateObAccomplishmentsDialogue();
+                    let endingPages;
+                    if (chain.links >= 999) {
+                        endingPages = npc.readyDialogue;
+                    } else {
+                        endingPages = npc.notReadyDialogue;
+                    }
+                    currentPages = [...accomplishments, ...endingPages];
                 } else {
                     currentPages = npc.dialogue;
                 }
@@ -3546,6 +3780,35 @@
                     dialogue.choiceResult = null;
                     dialogue.showingDeclinedDialogue = true;
                     return;
+                } else if (npc.name === 'Ob' && dialogue.choiceResult === 'yes' && !dialogue.showingObAccomplishments && !npc.itemGiven) {
+                    // Ob starts showing accomplishments
+                    dialogue.currentPage = 0;
+                    dialogue.choiceResult = null;
+                    dialogue.showingObAccomplishments = true;
+                    npc.hasCompletedQuest = true; // Mark as met
+                    return;
+                } else if (npc.name === 'Ob' && dialogue.showingObAccomplishments && !npc.itemGiven) {
+                    // Check if we've shown all accomplishment pages
+                    const accomplishments = generateObAccomplishmentsDialogue();
+                    // Add ending dialogue based on chain length
+                    let endingPages;
+                    if (chain.links >= 999) {
+                        endingPages = npc.readyDialogue;
+                    } else {
+                        endingPages = npc.notReadyDialogue;
+                    }
+                    const totalPages = accomplishments.length + endingPages.length;
+
+                    if (dialogue.currentPage >= totalPages - 1) {
+                        // At the end - check if player has 999 links
+                        if (chain.links >= 999) {
+                            // Give Freedom
+                            giveItemToPlayer(npc);
+                        }
+                        dialogue.showingObAccomplishments = false;
+                        endDialogue();
+                        return;
+                    }
                 } else if (dialogue.choiceResult === 'no' && npc.declinedDialogue && !dialogue.showingDeclinedDialogue) {
                     // For declined choices - show declined dialogue (only transition once)
                     dialogue.currentPage = 0;
@@ -3677,7 +3940,34 @@
                 } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
                     pages = npc.declinedDialogue;
                 } else if (npc.isFollowing) {
-                    pages = npc.followingDialogue;
+                    // Count met NPCs and find nearest unmet for following dialogue
+                    const metCount = npcs.filter(n => n.hasCompletedQuest).length;
+                    const unmetNpcs = npcs.filter(n => !n.hasCompletedQuest && n.name !== 'Bim');
+                    if (unmetNpcs.length === 0) {
+                        pages = npc.followingAllMetDialogue;
+                    } else {
+                        // Find closest unmet NPC to player
+                        let nearest = null;
+                        let nearestDist = Infinity;
+                        for (let unmet of unmetNpcs) {
+                            const dx = unmet.x - player.x;
+                            const dy = unmet.y - player.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < nearestDist) {
+                                nearestDist = dist;
+                                nearest = unmet;
+                            }
+                        }
+                        const directionText = game.hasWorkTools
+                            ? `at (${Math.round(nearest.x)}, ${Math.round(nearest.y)})`
+                            : getDirectionString(nearest.x, nearest.y);
+                        pages = npc.followingDialogue.map(page =>
+                            page.map(line =>
+                                line.replace('{metCount}', metCount)
+                                    .replace('{direction}', directionText)
+                            )
+                        );
+                    }
                 } else if (npc.hasAcceptedHelp) {
                     // Count met NPCs (those with hasCompletedQuest)
                     const metCount = npcs.filter(n => n.hasCompletedQuest).length;
@@ -3765,6 +4055,25 @@
                 } else {
                     pages = npc.dialogue;
                 }
+            } else if (npc.name === 'Ob') {
+                // Ob's dialogue handling
+                if (npc.itemGiven) {
+                    pages = npc.completedDialogue;
+                } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                    pages = npc.declinedDialogue;
+                } else if (dialogue.showingObAccomplishments) {
+                    // Generate dynamic accomplishments dialogue + ending
+                    const accomplishments = generateObAccomplishmentsDialogue();
+                    let endingPages;
+                    if (chain.links >= 999) {
+                        endingPages = npc.readyDialogue;
+                    } else {
+                        endingPages = npc.notReadyDialogue;
+                    }
+                    pages = [...accomplishments, ...endingPages];
+                } else {
+                    pages = npc.dialogue;
+                }
             } else if (npc.itemGiven) {
                 pages = npc.completedDialogue;
             } else if (npc.isCollecting && npc.collectingDialogue) {
@@ -3822,6 +4131,9 @@
                             dialogue.pendingChoice = true;
                         }
                     }
+                } else if (npc.name === 'Ob' && npc.hasChoice && dialogue.currentPage === pages.length - 1 && !npc.itemGiven && !dialogue.showingDeclinedDialogue && !dialogue.showingObAccomplishments) {
+                    // Ob shows choice for initial dialogue regardless of carry capacity
+                    dialogue.pendingChoice = true;
                 } else if (npc.hasChoice && dialogue.currentPage === pages.length - 1 && !npc.itemGiven && !npc.isCollecting && totalCarrying < modifiers.carryCapacity && !dialogue.showingDeclinedDialogue && !dialogue.showingNeedsWorkTools && !dialogue.showingNoDiamondDialogue && !dialogue.showingAcceptedHelp && !dialogue.showingYesDialogue) {
                     // Don't show choice for job NPCs when job is already accepted (except readyForBiz)
                     if (npc.name === 'Weadon' && jobs.currentPackage !== null) {
@@ -3875,6 +4187,7 @@
             dialogue.showingNoDiamondDialogue = false; // Reset Ram no diamond flag
             dialogue.showingAcceptedHelp = false; // Reset Bim accepted help flag
             dialogue.showingYesDialogue = false; // Reset yes dialogue flag
+            dialogue.showingObAccomplishments = false; // Reset Ob accomplishments flag
             dialogue.showingStraumDropped = false; // Reset Straum flags
             dialogue.showingStraumDiamond = false;
             dialogue.showingStraumDiamondDeclined = false;
@@ -4032,6 +4345,34 @@
                 npc.itemGiven = true;
                 npc.hasCompletedQuest = true;
                 audio.receivedGift.play();
+            } else if (npc.itemType === 'freedom') {
+                // Check if player has space
+                if (player.carryingItems.length >= modifiers.carryCapacity) {
+                    return;
+                }
+
+                // Add Freedom item
+                player.carryingItems.push({
+                    type: 'freedom',
+                    name: 'Freedom'
+                });
+                npc.itemGiven = true;
+                npc.hasCompletedQuest = true;
+                audio.receivedGift.play();
+            } else if (npc.itemType === 'fishingRod') {
+                // Check if player has space
+                if (player.carryingItems.length >= modifiers.carryCapacity) {
+                    return;
+                }
+
+                // Add Fishing Rod item
+                player.carryingItems.push({
+                    type: 'fishingRod',
+                    name: 'Fishing Rod'
+                });
+                npc.itemGiven = true;
+                npc.hasCompletedQuest = true;
+                audio.receivedGift.play();
             }
         }
 
@@ -4118,6 +4459,69 @@
             } else {
                 return distDesc + " to the " + direction;
             }
+        }
+
+        // Generate Ob's accomplishments dialogue dynamically
+        function generateObAccomplishmentsDialogue() {
+            const pages = [];
+
+            // List all items received from NPCs
+            for (const npc of npcs) {
+                if (npc.itemGiven && npc.name !== 'Ob') {
+                    let itemName = '';
+                    if (npc.itemType === 'ability' && npc.abilityName) {
+                        itemName = npc.abilityName;
+                    } else if (npc.itemType === 'diamond') {
+                        itemName = npc.diamondName || 'a Diamond';
+                    } else if (npc.itemType === 'musicDisk') {
+                        itemName = npc.diskName || 'a Music Disk';
+                    } else if (npc.itemType === 'homeBeacon') {
+                        itemName = 'the Home Beacon';
+                    } else if (npc.itemType === 'workTools') {
+                        itemName = 'the Work Tools';
+                    } else if (npc.itemType === 'mysteryItem') {
+                        itemName = npc.mysteryItemName || 'a Strange Item';
+                    } else if (npc.itemType === 'straum') {
+                        itemName = 'Coins';
+                    } else if (npc.itemType === 'airOfConfidence') {
+                        itemName = 'Air of Confidence';
+                    }
+                    if (itemName) {
+                        pages.push(["You have received", itemName, "from " + npc.name + "."]);
+                    }
+                }
+            }
+
+            // Count NPCs talked to (hasCompletedQuest)
+            const npcsMetCount = npcs.filter(n => n.hasCompletedQuest).length;
+            pages.push(["You have spoken with", npcsMetCount + " souls...", "each with their own story."]);
+
+            // Count ghosts talked to
+            const ghostsMetCount = ghosts.filter(g => g.hasBeenTalkedTo).length;
+            if (ghostsMetCount > 0) {
+                pages.push(["You have glimpsed", ghostsMetCount + " spirits...", "beyond the veil."]);
+            }
+
+            // Days and nights (day/night cycles)
+            const cycles = game.dayNightCycles;
+            if (cycles === 0) {
+                pages.push(["Time has not yet turned...", "but it will.", ""]);
+            } else if (cycles === 1) {
+                pages.push(["One cycle of light and dark...", "has passed since you began.", ""]);
+            } else {
+                pages.push([cycles + " cycles of light and dark...", "have passed since you began.", ""]);
+            }
+
+            // Number of followers
+            const followers = npcs.filter(n => n.isFollowing).length;
+            if (followers > 0) {
+                pages.push(["You travel with", followers + " companion" + (followers > 1 ? "s" : "") + "...", "not alone in your journey."]);
+            }
+
+            // Chain length
+            pages.push(["Your chain stretches", chain.links + " links...", "binding you to your origin."]);
+
+            return pages;
         }
 
         // Update camera zoom
@@ -4295,18 +4699,20 @@
                 }
             }
 
-            // Constrain player to chain length
-            const chainDist = Math.sqrt(player.x * player.x + player.y * player.y);
-            const maxDist = chain.links * chain.linkLength;
+            // Constrain player to chain length (unless they have Freedom)
+            if (!game.hasFreedom) {
+                const chainDist = Math.sqrt(player.x * player.x + player.y * player.y);
+                const maxDist = chain.links * chain.linkLength;
 
-            if (chainDist > maxDist) {
-                const angle = Math.atan2(player.y, player.x);
-                player.x = Math.cos(angle) * maxDist;
-                player.y = Math.sin(angle) * maxDist;
+                if (chainDist > maxDist) {
+                    const angle = Math.atan2(player.y, player.x);
+                    player.x = Math.cos(angle) * maxDist;
+                    player.y = Math.sin(angle) * maxDist;
 
-                // Dampen velocity when hitting chain limit
-                player.vx *= 0.5;
-                player.vy *= 0.5;
+                    // Dampen velocity when hitting chain limit
+                    player.vx *= 0.5;
+                    player.vy *= 0.5;
+                }
             }
 
             // Update camera offset (CCC) - with modifier reduction
@@ -5094,17 +5500,22 @@
                 const distPost = Math.sqrt(dxPost * dxPost + dyPost * dyPost);
 
                 if (distPost < player.radius + post.radius + 5) {
-                    // Deposit coins
-                    if (player.carryingCoins.length > 0) {
-                        const coinsDeposited = player.carryingCoins.length;
+                    // Check if deposits are allowed (not at 999 links and not after Freedom for coins/diamonds)
+                    const canDepositCoinsAndDiamonds = chain.links < 999 && !game.hasFreedom;
 
-                        // Extend chain for each coin
-                        for (let i = 0; i < coinsDeposited; i++) {
+                    // Deposit coins (only if allowed)
+                    if (player.carryingCoins.length > 0 && canDepositCoinsAndDiamonds) {
+                        // Cap at 999 links
+                        const spaceLeft = 999 - chain.links;
+                        const linksToAdd = Math.min(player.carryingCoins.length, spaceLeft);
+
+                        // Extend chain for each coin (up to cap)
+                        for (let i = 0; i < linksToAdd; i++) {
                             chain.links++;
                             chain.segments.push({ x: player.x, y: player.y });
                         }
 
-                        game.coinsDeposited += coinsDeposited;
+                        game.coinsDeposited += linksToAdd;
                         player.carryingCoins = [];
 
                         // Camera bounce effect
@@ -5112,7 +5523,7 @@
 
                         // Add floating text
                         floatingTexts.push({
-                            text: '+' + coinsDeposited,
+                            text: '+' + linksToAdd,
                             x: post.x,
                             y: post.y - post.radius - 10,
                             vy: -1.5,
@@ -5131,22 +5542,30 @@
                         saveGame();
                     }
 
-                    // Deposit items (find first non-package, non-momo item)
-                    const itemIndex = player.carryingItems.findIndex(i => i.type !== 'package' && i.type !== 'momo');
+                    // Deposit items (find first non-package, non-momo item that can be deposited)
+                    // Skip diamonds if we can't deposit coins/diamonds
+                    const itemIndex = player.carryingItems.findIndex(i => {
+                        if (i.type === 'package' || i.type === 'momo') return false;
+                        if (i.type === 'diamond' && !canDepositCoinsAndDiamonds) return false;
+                        return true;
+                    });
                     if (itemIndex !== -1) {
                         const item = player.carryingItems[itemIndex];
 
                         if (item.type === 'diamond') {
-                            // Add diamond value to coins
-                            for (let i = 0; i < item.coinValue; i++) {
+                            // Add diamond value to coins (capped at 999)
+                            const spaceLeft = 999 - chain.links;
+                            const linksToAdd = Math.min(item.coinValue, spaceLeft);
+
+                            for (let i = 0; i < linksToAdd; i++) {
                                 chain.links++;
                                 chain.segments.push({ x: player.x, y: player.y });
                             }
-                            game.coinsDeposited += item.coinValue;
+                            game.coinsDeposited += linksToAdd;
 
                             // Add floating text
                             floatingTexts.push({
-                                text: '+' + item.coinValue,
+                                text: '+' + linksToAdd,
                                 x: post.x,
                                 y: post.y - post.radius - 10,
                                 vy: -1.5,
@@ -5233,6 +5652,36 @@
                             // Mystery item - enables ghost sight
                             game.canSeeGhosts = true;
                             game.currentAbilityText = 'Ghostly visions';
+                            game.showAbilityDisplay = true;
+                            game.abilityDisplayTimer = 0;
+                            game.paused = true;
+
+                            audio.depositSpecial.currentTime = 0;
+                            audio.depositSpecial.play();
+                        } else if (item.type === 'freedom') {
+                            // Freedom - removes player's chain entirely
+                            game.hasFreedom = true;
+                            chain.links = 0;
+                            chain.segments = [{ x: post.x, y: post.y }]; // Keep one segment at post
+
+                            // Visual effect - camera shake
+                            game.cameraShakeAmount = 0.5;
+
+                            game.currentAbilityText = 'Freedom';
+                            game.showAbilityDisplay = true;
+                            game.abilityDisplayTimer = 0;
+                            game.paused = true;
+
+                            audio.depositSpecial.currentTime = 0;
+                            audio.depositSpecial.play();
+                        } else if (item.type === 'fishingRod') {
+                            // Fishing Rod - enables fishing in ponds
+                            game.hasFishingRod = true;
+                            // Initialize first fishing interval (10-120 seconds)
+                            game.fishingInterval = 10 + Math.random() * 110;
+                            game.fishingTimer = 0;
+
+                            game.currentAbilityText = 'Fishing Rod';
                             game.showAbilityDisplay = true;
                             game.abilityDisplayTimer = 0;
                             game.paused = true;
@@ -5428,6 +5877,13 @@
             const isDaytime = hours >= 6 && hours < 18;
             canvas.style.filter = isDaytime ? 'invert(1)' : 'none';
 
+            // Track day/night cycle transitions
+            if (game.lastDaytimeState !== null && game.lastDaytimeState !== isDaytime) {
+                game.dayNightCycles++;
+                saveGame();
+            }
+            game.lastDaytimeState = isDaytime;
+
             ctx.fillStyle = '#000';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -5541,6 +5997,22 @@
             ctx.fillStyle = '#fff';
             ctx.beginPath();
             ctx.arc(brotPostScreen.x, brotPostScreen.y, brotPost.baseRadius * game.zoom, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Ob's chain (logarithmic spiral)
+            ctx.fillStyle = '#888';
+            for (let seg of obChain.segments) {
+                const screen = worldToScreen(seg.x, seg.y);
+                ctx.beginPath();
+                ctx.arc(screen.x, screen.y, 3 * game.zoom, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Draw Ob's post
+            const obPostScreen = worldToScreen(obPost.x, obPost.y);
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(obPostScreen.x, obPostScreen.y, obPost.baseRadius * game.zoom, 0, Math.PI * 2);
             ctx.fill();
 
             // Draw Brot's animals (triangles in Brot's zone - white fill)
@@ -5727,7 +6199,7 @@
                     for (let i = ghost.trail.length - 1; i >= 0; i--) {
                         const t = ghost.trail[i];
                         const tScreen = worldToScreen(t.x, t.y);
-                        const trailOpacity = (1 - t.age / 0.5) * ghost.opacity;
+                        const trailOpacity = (1 - t.age / 0.2) * ghost.opacity;
 
                         ctx.globalAlpha = trailOpacity;
                         ctx.fillStyle = ghost.color;
@@ -5826,21 +6298,32 @@
                 ctx.fillText(game.nearbyNpc.name, canvas.width / 2, canvas.height - 20);
             }
 
-            // Draw home beacon indicator
+            // Draw home beacon indicator (only if post is off screen)
             if (game.hasHomeBeacon) {
-                const dx = post.x - player.x;
-                const dy = post.y - player.y;
-                const angle = Math.atan2(dy, dx);
+                // Calculate post's screen position
+                const postScreenX = ((post.x - player.x) * game.zoom) + canvas.width / 2 + game.cameraOffsetX;
+                const postScreenY = ((post.y - player.y) * game.zoom) + canvas.height / 2 + game.cameraOffsetY;
 
-                // Position at edge of screen
-                const edgePadding = 30;
-                const indicatorX = canvas.width / 2 + Math.cos(angle) * (canvas.width / 2 - edgePadding);
-                const indicatorY = canvas.height / 2 + Math.sin(angle) * (canvas.height / 2 - edgePadding);
+                // Check if post is visible on screen (with some margin for post radius)
+                const margin = post.radius * game.zoom;
+                const postOnScreen = postScreenX + margin >= 0 && postScreenX - margin <= canvas.width &&
+                                     postScreenY + margin >= 0 && postScreenY - margin <= canvas.height;
 
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.arc(indicatorX, indicatorY, 10, 0, Math.PI * 2);
-                ctx.fill();
+                if (!postOnScreen) {
+                    const dx = post.x - player.x;
+                    const dy = post.y - player.y;
+                    const angle = Math.atan2(dy, dx);
+
+                    // Position at edge of screen
+                    const edgePadding = 30;
+                    const indicatorX = canvas.width / 2 + Math.cos(angle) * (canvas.width / 2 - edgePadding);
+                    const indicatorY = canvas.height / 2 + Math.sin(angle) * (canvas.height / 2 - edgePadding);
+
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(indicatorX, indicatorY, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                }
             }
 
             // Draw dialogue box
@@ -5968,7 +6451,34 @@
                     } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
                         pages = npc.declinedDialogue;
                     } else if (npc.isFollowing) {
-                        pages = npc.followingDialogue;
+                        // Count met NPCs and find nearest unmet for following dialogue
+                        const metCount = npcs.filter(n => n.hasCompletedQuest).length;
+                        const unmetNpcs = npcs.filter(n => !n.hasCompletedQuest && n.name !== 'Bim');
+                        if (unmetNpcs.length === 0) {
+                            pages = npc.followingAllMetDialogue;
+                        } else {
+                            // Find closest unmet NPC to player
+                            let nearest = null;
+                            let nearestDist = Infinity;
+                            for (let unmet of unmetNpcs) {
+                                const dx = unmet.x - player.x;
+                                const dy = unmet.y - player.y;
+                                const dist = Math.sqrt(dx * dx + dy * dy);
+                                if (dist < nearestDist) {
+                                    nearestDist = dist;
+                                    nearest = unmet;
+                                }
+                            }
+                            const directionText = game.hasWorkTools
+                                ? `at (${Math.round(nearest.x)}, ${Math.round(nearest.y)})`
+                                : getDirectionString(nearest.x, nearest.y);
+                            pages = npc.followingDialogue.map(page =>
+                                page.map(line =>
+                                    line.replace('{metCount}', metCount)
+                                        .replace('{direction}', directionText)
+                                )
+                            );
+                        }
                     } else if (npc.hasAcceptedHelp) {
                         // Count met NPCs (those with hasCompletedQuest)
                         const metCount = npcs.filter(n => n.hasCompletedQuest).length;
@@ -6053,6 +6563,25 @@
                         pages = npc.yesDialogue;
                     } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
                         pages = npc.declinedDialogue;
+                    } else {
+                        pages = npc.dialogue;
+                    }
+                } else if (npc.name === 'Ob') {
+                    // Ob's dialogue handling
+                    if (npc.itemGiven) {
+                        pages = npc.completedDialogue;
+                    } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                        pages = npc.declinedDialogue;
+                    } else if (dialogue.showingObAccomplishments) {
+                        // Generate dynamic accomplishments dialogue + ending
+                        const accomplishments = generateObAccomplishmentsDialogue();
+                        let endingPages;
+                        if (chain.links >= 999) {
+                            endingPages = npc.readyDialogue;
+                        } else {
+                            endingPages = npc.notReadyDialogue;
+                        }
+                        pages = [...accomplishments, ...endingPages];
                     } else {
                         pages = npc.dialogue;
                     }
@@ -7141,6 +7670,7 @@
         initChain();
         initPinChain();
         initBrotChain();
+        initObChain();
         initMusic();
         initVisualElements();
 
