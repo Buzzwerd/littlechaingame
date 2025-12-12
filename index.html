@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chain Game v0.56</title>
+    <title>Chain Game v0.58</title>
     <style>
         body {
             margin: 0;
@@ -35,6 +35,20 @@
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+
+        // Version
+        const GAME_VERSION = '0.58';
+
+        // Title screen state
+        const titleScreen = {
+            active: true,
+            keysPressed: {
+                up: false,
+                down: false,
+                left: false,
+                right: false
+            }
+        };
 
         // Game state
         const game = {
@@ -112,6 +126,11 @@
                 new Audio('sfx/pickup_00.wav'),
                 new Audio('sfx/pickup_01.wav'),
                 new Audio('sfx/pickup_02.wav')
+            ],
+            confirmationDings: [
+                new Audio('sfx/confirmation-ding_00.wav'),
+                new Audio('sfx/confirmation-ding_01.wav'),
+                new Audio('sfx/confirmation-ding_02.wav')
             ],
             receivedGift: new Audio('sfx/received-gift_soundimpact.wav'),
             movingSound: new Audio('sfx/draggingsmallchain.wav'),
@@ -262,6 +281,40 @@
                 const dropX = player.x + Math.cos(angle) * distance;
                 const dropY = player.y + Math.sin(angle) * distance;
 
+                // Special handling for Momo
+                if (droppedItem.type === 'momo') {
+                    const momoNpc = npcs.find(n => n.name === 'Momo');
+                    if (momoNpc) {
+                        // Check if dropped in a puddle
+                        let inPuddle = false;
+                        for (let puddle of puddles) {
+                            const dx = dropX - puddle.x;
+                            const dy = dropY - puddle.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy);
+                            if (dist < puddle.radius) {
+                                inPuddle = true;
+                                // Move Momo to the puddle center
+                                momoNpc.x = puddle.x;
+                                momoNpc.y = puddle.y;
+                                break;
+                            }
+                        }
+
+                        if (inPuddle) {
+                            // Momo is dropped in a puddle - mark as in pond
+                            momoNpc.inPond = true;
+                            momoNpc.isBeingCarried = false;
+                            // Reward is given through dialogue when player talks to Momo
+                        } else {
+                            // Dropped outside puddle - Momo becomes NPC again at drop location
+                            momoNpc.x = dropX;
+                            momoNpc.y = dropY;
+                            momoNpc.isBeingCarried = false;
+                        }
+                    }
+                    return; // Don't add Momo to droppedItems array
+                }
+
                 // Place item on ground (preserving all properties)
                 droppedItems.push({
                     x: dropX,
@@ -388,7 +441,7 @@
                     ["Hey, are you new?,", "I can help you out.", "Come back when your hands aren't full."]
                 ],
                 completedDialogue: [
-                    ["Remember: Left+Right to drop extra weight!", "Sometimes we have to let go."]
+                    ["Remember: Left+Right to drop extra weight!", "Sometimes we have to let go. Know what I mean?"]
                 ],
                 itemGiven: false,
                 hasCompletedQuest: false,
@@ -396,7 +449,7 @@
                 needsWorkTools: false,
                 requiresCoins: 0,
                 itemType: 'ability',
-                abilityName: 'Small Bag +1 Capacity',
+                abilityName: '+1 Capacity',
                 abilityEffect: () => { modifiers.carryCapacity += 1; }
             },
             {
@@ -757,7 +810,7 @@
                 outlineColor: '#fff',
                 dialogue: [
                     ["Oh, nice to see someone friendly.", "I'm basically done doing anything at this point", "Feels like someone put me way out here and forgot about me."],
-                    ["Anyway, I've got the Feeling Of Fulfillment.", "Carry enough weight and you'll feel better.", "15 coins.", "(Up for yes, Down for no)"]
+                    ["Anyway, I've got this Feeling Of Fulfillment...", "But it's not doing me any good, want it?", "15 coins.", "(Up for yes, Down for no)"]
                 ],
                 collectingDialogue: [
                     ["Yeah, bring me those coins.", "I need X more.", "I'll just wait here. In the void. Alone."]
@@ -769,7 +822,7 @@
                     ["You walked ALL the way out here...", "just to say no?", "Respect, honestly."]
                 ],
                 completedDialogue: [
-                    ["Sometimes I feel like I still have my Chain..."]
+                    ["It feels good to carry some weight doesn't it?"]
                 ],
                 itemGiven: false,
                 hasCompletedQuest: false,
@@ -777,14 +830,14 @@
                 coinsCollected: 0,
                 isCollecting: false,
                 itemType: 'ability',
-                abilityName: 'Max Fulfillment Coin',
+                abilityName: 'Feeling of Fulfillment',
                 abilityEffect: () => { game.hasMaxFulfillmentCoin = true; },
                 hasChoice: true
             },
-            /*{
+            {
                 name: 'Betty',
-                x: -1650,
-                y: 500,
+                x: -2650,
+                y: 600,
                 radius: 12,
                 color: '#000',
                 outlineColor: '#fff',
@@ -811,7 +864,7 @@
                 isCollecting: false,
                 itemType: 'homeBeacon',
                 hasChoice: true
-            },*/
+            },
             {
                 name: 'George',
                 x: 0,
@@ -939,13 +992,13 @@
                 color: '#000',
                 outlineColor: '#fff',
                 dialogue: [
-                    ["Oh look, still on a Chain huh?.", "How original.", "Let me guess - you want something from me?"],
-                    ["I've got this disk, see.", "12 tracks of pure vibes.", "But I'm not just handing it to some baby Chained tourist."],
+                    ["Oh look, still on a Chain huh?.", "Couldn't be me.", "Let me guess - you want my Disk?"],
+                    ["I cooked this up myself though...", "12 tracks of pure vibes.", "But I'm not just handing it to some baby Chained tourist."],
                     ["Come back when your Chain's getting ready to come off.", "You can hang out and listen here for now...", "If you want..."]
                 ],
                 linksReadyDialogue: [
                     ["Well well well.", "You actually did it.", "I'd slow clap but I don't have arms."],
-                    ["Alright, you've earned my respect.", "And my disk.", "Take good care of it. These beats slap."]
+                    ["Alright, you've earned it.", "My disk that is...", "Take good care of it. These beats slap."]
                 ],
                 completedDialogue: [
                     ["The legend returns.", "Still grinding? Respect.", "You're the only player who made it this far, probably."]
@@ -1118,13 +1171,13 @@
                 outlineColor: '#fff',
                 dialogue: [
                     ["Sometimes more is more.", "Sometimes less is more.", "Sometimes more is less."],
-                    ["I've got this Clarity for sale.", "6 coins and it's yours.", "(Up for yes, Down for no)"]
+                    ["I guess this Clarity isn't working...", "You want it? 6 coins and it's yours.", "(Up for yes, Down for no)"]
                 ],
                 collectingDialogue: [
                     ["Yeah yeah, bring me the coins.", "I need X more.", "I'm not going anywhere. Obviously."]
                 ],
                 fullDialogue: [
-                    ["Your inventory is full.", "Classic mistake.", "Come back when you've deposited."]
+                    ["Your inventory is full.", "Classic mistake.", "Come back when you're not mule'in it."]
                 ],
                 declinedDialogue: [
                     ["You'll be back.", "They always come back."]
@@ -1157,7 +1210,7 @@
                     ["COINS! Bring me COINS!", "I need X more!", "SPEED IS ALMOST YOURS!"]
                 ],
                 fullDialogue: [
-                    ["Hands full? Rookie move.", "Deposit your stuff and come back.", "I'll wait."]
+                    ["Hands full? Rookie move.", "Come back when you're not so weighed down.", "I'll wait."]
                 ],
                 declinedDialogue: [
                     ["SLOW! You're gonna stay SLOW!", "I respect that actually. No I don't."]
@@ -1171,7 +1224,7 @@
                 coinsCollected: 0,
                 isCollecting: false,
                 itemType: 'ability',
-                abilityName: 'Turbo Speed +50%',
+                abilityName: 'Speed +50%',
                 abilityEffect: () => { modifiers.moveSpeed += 0.50; },
                 hasChoice: true
             },
@@ -1183,7 +1236,7 @@
                 color: '#000',
                 outlineColor: '#fff',
                 dialogue: [
-                    ["Let me guess - things getting too heavy?", "Can't barely take it anymore?", "I've some That Strong Stuff."],
+                    ["Let me guess - things getting too heavy?", "Can't barely take it anymore?", "I've got That Strong Stuff."],
                     ["6 coins. Non-negotiable.", "No funny business.", "(Up for yes, Down for no)"]
                 ],
                 collectingDialogue: [
@@ -1218,7 +1271,7 @@
                 dialogue: [
                     ["Wow… your chain is so long… and mine…", "well… my post isn't near any coins…", "and nobody is around to help…"]
                 ],
-                tenLinksDialogue: [
+                sixLinksDialogue: [
                     ["Look how long my chain is getting!"]
                 ],
                 twentyLinksDialogue: [
@@ -1354,7 +1407,7 @@
                 color: '#000',
                 outlineColor: '#fff',
                 dialogue: [
-                    ["Oh hey! I didn't see you there.", "I'm trying to catalog everyone in this world...", "but there's just so many people!"],
+                    ["Oh hey! I need your help", "I'm trying to make a list of everybody...", "but there's just so many people!"],
                     ["Would you help me find them all?", "I'll keep track of who you've met.", "(Up for yes, Down for no)"]
                 ],
                 acceptedHelpDialogue: [
@@ -1374,7 +1427,7 @@
                     ["Yay! This is going to be great!", "Lead the way, friend!", "I'll try to keep up!"]
                 ],
                 declinedDialogue: [
-                    ["Bah... I guess I didn't wanna", "do all that walking anyway."]
+                    ["Bah... I guess I didn't wanna", "do all that work anyway."]
                 ],
                 followingDialogue: [
                     ["This is so exciting!", "Who are we visiting next?"]
@@ -1384,6 +1437,42 @@
                 isFollowing: false,
                 followSide: 0,
                 hasCompletedQuest: false,
+                requiresCoins: 0,
+                itemType: null
+            },
+            {
+                name: 'Momo',
+                x: -1084,
+                y: -1624,
+                radius: 12,
+                color: '#000',
+                outlineColor: '#fff',
+                dialogue: [
+                    ["Ugh... I'm so tired...", "I just need some water", "Can you carry me?"],
+                    ["Please? I'm not that heavy...", "and so thirsty...", "(Up for yes, Down for no)"]
+                ],
+                declinedDialogue: [
+                    ["Puh! Fine! Leave me here!", "See if I care!"]
+                ],
+                droppedDialogue: [
+                    ["Hey! Why'd you drop me?!", "There's nothing to drink here...", "Pick me up again, please?"],
+                    ["I promise I won't complain...", "(Up for yes, Down for no)"]
+                ],
+                inPondDialogue: [
+                    ["Ahhhhh!", "So wet! So wonderful!", "*splish splash*"],
+                    ["Here, take all this White Diamond!", "I've been saving it forever!", "You deserve it!"]
+                ],
+                afterRewardDialogue: [
+                    ["*splash splash*", "Hmm... it's kinda wet here.", "Maybe it'd be better somewhere dry..."]
+                ],
+                fullDialogue: [
+                    ["You're carrying too much stuff!", "How are you supposed to carry ME?!", "Come back when you've got space!"]
+                ],
+                hasChoice: true,
+                hasCompletedQuest: false, // Given coins to player (reward)
+                hasBeenCarried: false, // Has been picked up before
+                isBeingCarried: false,
+                inPond: false, // Whether Momo is in a puddle
                 requiresCoins: 0,
                 itemType: null
             }
@@ -1691,6 +1780,10 @@
                     hasAcceptedHelp: npc.hasAcceptedHelp || false,
                     // Ram diamond collecting state
                     isCollectingDiamond: npc.isCollectingDiamond || false,
+                    // Momo state
+                    isBeingCarried: npc.isBeingCarried || false,
+                    hasBeenCarried: npc.hasBeenCarried || false,
+                    inPond: npc.inPond || false,
                     x: npc.x,
                     y: npc.y
                 })),
@@ -1837,6 +1930,16 @@
                         // Restore Ram's diamond collecting state
                         if (savedNpc.isCollectingDiamond !== undefined) {
                             npc.isCollectingDiamond = savedNpc.isCollectingDiamond;
+                        }
+                        // Restore Momo's state
+                        if (savedNpc.isBeingCarried !== undefined) {
+                            npc.isBeingCarried = savedNpc.isBeingCarried;
+                        }
+                        if (savedNpc.hasBeenCarried !== undefined) {
+                            npc.hasBeenCarried = savedNpc.hasBeenCarried;
+                        }
+                        if (savedNpc.inPond !== undefined) {
+                            npc.inPond = savedNpc.inPond;
                         }
                         if (savedNpc.x !== undefined) {
                             npc.x = savedNpc.x;
@@ -2494,6 +2597,39 @@
                 return;
             }
 
+            // Title screen key handling
+            if (titleScreen.active) {
+                let keyPressed = false;
+                if (e.key === 'ArrowUp' && !titleScreen.keysPressed.up) {
+                    titleScreen.keysPressed.up = true;
+                    keyPressed = true;
+                } else if (e.key === 'ArrowDown' && !titleScreen.keysPressed.down) {
+                    titleScreen.keysPressed.down = true;
+                    keyPressed = true;
+                } else if (e.key === 'ArrowLeft' && !titleScreen.keysPressed.left) {
+                    titleScreen.keysPressed.left = true;
+                    keyPressed = true;
+                } else if (e.key === 'ArrowRight' && !titleScreen.keysPressed.right) {
+                    titleScreen.keysPressed.right = true;
+                    keyPressed = true;
+                }
+
+                // Play confirmation ding when a new key is pressed
+                if (keyPressed) {
+                    const randomDing = audio.confirmationDings[Math.floor(Math.random() * audio.confirmationDings.length)];
+                    randomDing.currentTime = 0;
+                    randomDing.play();
+                }
+
+                // Check if all keys have been pressed
+                if (titleScreen.keysPressed.up && titleScreen.keysPressed.down &&
+                    titleScreen.keysPressed.left && titleScreen.keysPressed.right) {
+                    titleScreen.active = false;
+                    game.userHasInteracted = true;
+                }
+                return; // Don't process other keys while on title screen
+            }
+
             // Debug: Toggle work tools (key 9)
             if (e.key === '9') {
                 game.hasWorkTools = !game.hasWorkTools;
@@ -2765,8 +2901,8 @@
                     currentPages = npc.fiftyLinksDialogue;
                 } else if (pinChain.links >= 20) {
                     currentPages = npc.twentyLinksDialogue;
-                } else if (pinChain.links >= 10) {
-                    currentPages = npc.tenLinksDialogue;
+                } else if (pinChain.links >= 6) {
+                    currentPages = npc.sixLinksDialogue;
                 } else {
                     currentPages = npc.dialogue;
                 }
@@ -2865,6 +3001,25 @@
                             );
                         }
                     }
+                } else {
+                    currentPages = npc.dialogue;
+                }
+            } else if (npc.name === 'Momo') {
+                // Momo's dialogue depends on state
+                if (npc.inPond && npc.hasCompletedQuest) {
+                    // Already gave reward, just happy dialogue
+                    currentPages = npc.afterRewardDialogue;
+                } else if (npc.inPond) {
+                    // Just dropped in pond, give reward
+                    currentPages = npc.inPondDialogue;
+                } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                    currentPages = npc.declinedDialogue;
+                } else if (totalCarrying >= modifiers.carryCapacity && npc.fullDialogue && !npc.hasBeenCarried) {
+                    // Inventory full and Momo hasn't been carried yet
+                    currentPages = npc.fullDialogue;
+                } else if (npc.hasBeenCarried && !npc.isBeingCarried) {
+                    // Was carried before, now dropped outside pond
+                    currentPages = npc.droppedDialogue;
                 } else {
                     currentPages = npc.dialogue;
                 }
@@ -3044,6 +3199,23 @@
                     dialogue.currentPage = 0;
                     endDialogue();
                     return;
+                } else if (npc.name === 'Momo' && npc.inPond && !npc.hasCompletedQuest && currentPages === npc.inPondDialogue) {
+                    // Give White Diamond to player (worth 100 coins, weighs 100)
+                    player.carryingItems.push({
+                        type: 'diamond',
+                        name: 'White Diamond',
+                        coinValue: 100,
+                        slowAmount: 100
+                    });
+                    npc.hasCompletedQuest = true;
+
+                    // Play reward sound
+                    audio.receivedGift.currentTime = 0;
+                    audio.receivedGift.play();
+
+                    dialogue.currentPage = 0;
+                    endDialogue();
+                    return;
                 } else if (npc.name === 'Ram' && dialogue.choiceResult === 'yes' && !npc.itemGiven && !npc.isCollectingDiamond) {
                     // Check if player has a regular diamond (any except White Diamond/Golden Fleece)
                     const hasRegularDiamond = player.carryingItems.some(item =>
@@ -3112,6 +3284,23 @@
                         dialogue.currentPage = 0;
                         dialogue.choiceResult = null;
                         dialogue.showingYesDialogue = true;
+                        return;
+                    }
+                } else if (npc.name === 'Momo' && dialogue.choiceResult === 'yes' && !npc.isBeingCarried && !npc.inPond) {
+                    // Check if player has capacity
+                    const totalCarrying = player.carryingCoins.length + player.carryingItems.length;
+                    if (totalCarrying < modifiers.carryCapacity) {
+                        // Momo becomes a carried item
+                        player.carryingItems.push({
+                            type: 'momo',
+                            name: 'Momo',
+                            slowAmount: 20 // Weight 20
+                        });
+                        npc.isBeingCarried = true;
+                        npc.hasBeenCarried = true; // Track that Momo was picked up
+                        dialogue.currentPage = 0;
+                        dialogue.choiceResult = null;
+                        endDialogue();
                         return;
                     }
                 } else if (dialogue.choiceResult === 'no' && npc.declinedDialogue && !dialogue.showingDeclinedDialogue) {
@@ -3186,7 +3375,7 @@
                 } else if (pinChain.links >= 20) {
                     pages = npc.twentyLinksDialogue;
                 } else if (pinChain.links >= 10) {
-                    pages = npc.tenLinksDialogue;
+                    pages = npc.sixLinksDialogue;
                 } else {
                     pages = npc.dialogue;
                 }
@@ -3285,6 +3474,25 @@
                             );
                         }
                     }
+                } else {
+                    pages = npc.dialogue;
+                }
+            } else if (npc.name === 'Momo') {
+                // Momo's dialogue depends on state
+                if (npc.inPond && npc.hasCompletedQuest) {
+                    // Already gave reward, just happy dialogue
+                    pages = npc.afterRewardDialogue;
+                } else if (npc.inPond) {
+                    // Just dropped in pond, give reward
+                    pages = npc.inPondDialogue;
+                } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                    pages = npc.declinedDialogue;
+                } else if (totalCarrying >= modifiers.carryCapacity && npc.fullDialogue && !npc.hasBeenCarried) {
+                    // Inventory full and Momo hasn't been carried yet
+                    pages = npc.fullDialogue;
+                } else if (npc.hasBeenCarried && !npc.isBeingCarried) {
+                    // Was carried before, now dropped outside pond
+                    pages = npc.droppedDialogue;
                 } else {
                     pages = npc.dialogue;
                 }
@@ -3727,13 +3935,15 @@
             let finalSpeed = currentSpeed;
             const totalCarried = player.carryingCoins.length;
 
-            // Calculate item weight (diamonds and other items add to slowdown)
+            // Calculate item weight (diamonds, momo, and other items add to slowdown)
             let totalWeight = totalCarried;
             for (let item of player.carryingItems) {
                 if (item.type === 'diamond') {
                     totalWeight += item.slowAmount;
                 } else if (item.type === 'package') {
                     totalWeight += item.weight; // Packages have custom weight
+                } else if (item.type === 'momo') {
+                    totalWeight += item.slowAmount; // Momo weighs 20
                 } else {
                     totalWeight += 1; // Regular items count as 1
                 }
@@ -3750,7 +3960,7 @@
 
                 // Max Fulfillment Coin: triple speed when carrying 10+ weight
                 if (game.maxFulfillmentBoostActive) {
-                    finalSpeed *= 3;
+                    finalSpeed *= 1.2;
                 }
             }
 
@@ -4427,6 +4637,9 @@
             // Check NPC proximity for interactions (only when not in cooldown)
             if (!dialogue.active && dialogue.cooldownTimer <= 0) {
                 for (let npc of npcs) {
+                    // Skip Momo if being carried
+                    if (npc.name === 'Momo' && npc.isBeingCarried) continue;
+
                     const dx = player.x - npc.x;
                     const dy = player.y - npc.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -4604,8 +4817,8 @@
                         saveGame();
                     }
 
-                    // Deposit items (find first non-package item)
-                    const itemIndex = player.carryingItems.findIndex(i => i.type !== 'package');
+                    // Deposit items (find first non-package, non-momo item)
+                    const itemIndex = player.carryingItems.findIndex(i => i.type !== 'package' && i.type !== 'momo');
                     if (itemIndex !== -1) {
                         const item = player.carryingItems[itemIndex];
 
@@ -4817,8 +5030,73 @@
             }
         }
 
+        // Render title screen
+        function renderTitleScreen() {
+            // Black background
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+
+            // Title: "Little Chain Game"
+            ctx.fillStyle = '#fff';
+            ctx.font = '36px monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('The Chain Game', centerX, centerY - 150);
+
+            // Version
+            ctx.font = '16px monospace';
+            ctx.fillText('v' + GAME_VERSION, centerX, centerY - 200);
+
+            // Arrow key indicators in cross pattern
+            const boxSize = 40;
+            const boxSpacing = 50;
+            const indicatorCenterY = centerY + 30;
+
+            // Helper function to draw arrow box
+            function drawArrowBox(x, y, arrow, pressed) {
+                // Box
+                ctx.fillStyle = pressed ? '#fff' : '#000';
+                ctx.fillRect(x - boxSize/2, y - boxSize/2, boxSize, boxSize);
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x - boxSize/2, y - boxSize/2, boxSize, boxSize);
+
+                // Arrow symbol
+                ctx.fillStyle = pressed ? '#000' : '#fff';
+                ctx.font = 'bold 24px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(arrow, x, y);
+            }
+
+            // Up arrow (top of cross)
+            drawArrowBox(centerX, indicatorCenterY - boxSpacing, '↑', titleScreen.keysPressed.up);
+            // Down arrow (bottom of cross)
+            drawArrowBox(centerX, indicatorCenterY + boxSpacing, '↓', titleScreen.keysPressed.down);
+            // Left arrow (left of cross)
+            drawArrowBox(centerX - boxSpacing, indicatorCenterY, '←', titleScreen.keysPressed.left);
+            // Right arrow (right of cross)
+            drawArrowBox(centerX + boxSpacing, indicatorCenterY, '→', titleScreen.keysPressed.right);
+
+            // Credit at bottom
+            ctx.fillStyle = '#fff';
+            ctx.font = '16px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('Created by Kevin Barrios (2025)', centerX, canvas.height - 40);
+        }
+
         // Render
         function render() {
+            // Render title screen if active (no day/night filter)
+            if (titleScreen.active) {
+                canvas.style.filter = 'none';
+                renderTitleScreen();
+                return;
+            }
+
             // Day/Night visual - invert colors during daytime (6am-6pm)
             const now = new Date();
             const hours = now.getHours();
@@ -5017,18 +5295,28 @@
                 const item = player.carryingItems[i];
                 const stackOffset = (player.radius + 8 + stackIndex * 12) * game.zoom;
 
-                // All items are black with white outline
-                ctx.fillStyle = '#000';
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2 * game.zoom;
-
-                if (item.type === 'package') {
-                    // Draw packages as squares
+                if (item.type === 'momo') {
+                    // Draw Momo as white circle (like an NPC, radius 12)
+                    ctx.fillStyle = '#fff';
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2 * game.zoom;
+                    ctx.beginPath();
+                    ctx.arc(playerScreen.x, playerScreen.y - stackOffset, 12 * game.zoom, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                } else if (item.type === 'package') {
+                    // Draw packages as squares (black with white outline)
+                    ctx.fillStyle = '#000';
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2 * game.zoom;
                     const size = 16 * game.zoom; // Same diameter as circle (8 * 2)
                     ctx.fillRect(playerScreen.x - size/2, playerScreen.y - stackOffset - size/2, size, size);
                     ctx.strokeRect(playerScreen.x - size/2, playerScreen.y - stackOffset - size/2, size, size);
                 } else {
-                    // Draw other items as circles
+                    // Draw other items as circles (black with white outline)
+                    ctx.fillStyle = '#000';
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2 * game.zoom;
                     ctx.beginPath();
                     ctx.arc(playerScreen.x, playerScreen.y - stackOffset, 8 * game.zoom, 0, Math.PI * 2);
                     ctx.fill();
@@ -5040,6 +5328,9 @@
             // Draw NPCs
             const time = Date.now() / 1000;
             for (let npc of npcs) {
+                // Skip Momo if being carried
+                if (npc.name === 'Momo' && npc.isBeingCarried) continue;
+
                 const npcScreen = worldToScreen(npc.x, npc.y);
 
                 // Determine NPC color (blink white if collecting coins or can receive package, white if quest completed, black otherwise)
@@ -5234,7 +5525,7 @@
                     } else if (pinChain.links >= 20) {
                         pages = npc.twentyLinksDialogue;
                     } else if (pinChain.links >= 10) {
-                        pages = npc.tenLinksDialogue;
+                        pages = npc.sixLinksDialogue;
                     } else {
                         pages = npc.dialogue;
                     }
@@ -5333,6 +5624,25 @@
                                 );
                             }
                         }
+                    } else {
+                        pages = npc.dialogue;
+                    }
+                } else if (npc.name === 'Momo') {
+                    // Momo's dialogue depends on state
+                    if (npc.inPond && npc.hasCompletedQuest) {
+                        // Already gave reward, just happy dialogue
+                        pages = npc.afterRewardDialogue;
+                    } else if (npc.inPond) {
+                        // Just dropped in pond, give reward
+                        pages = npc.inPondDialogue;
+                    } else if (dialogue.showingDeclinedDialogue && npc.declinedDialogue) {
+                        pages = npc.declinedDialogue;
+                    } else if (totalCarrying >= modifiers.carryCapacity && npc.fullDialogue && !npc.hasBeenCarried) {
+                        // Inventory full and Momo hasn't been carried yet
+                        pages = npc.fullDialogue;
+                    } else if (npc.hasBeenCarried && !npc.isBeingCarried) {
+                        // Was carried before, now dropped outside pond
+                        pages = npc.droppedDialogue;
                     } else {
                         pages = npc.dialogue;
                     }
@@ -5460,6 +5770,9 @@
                 const indicators = [];
 
                 for (let npc of npcs) {
+                    // Skip Momo if being carried
+                    if (npc.name === 'Momo' && npc.isBeingCarried) continue;
+
                     const dx = npc.x - player.x;
                     const dy = npc.y - player.y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -6054,7 +6367,7 @@
             if (!clint || !clint.isFollowing) return;
 
             // Calculate target position to the side of the player
-            const sideOffset = 150 * clint.followSide; // 150 units to the side
+            const sideOffset = 180 * clint.followSide; // 150 units to the side
             const targetX = player.x + sideOffset;
             const targetY = player.y;
 
@@ -6065,7 +6378,7 @@
 
             // Calculate player speed for matching
             const playerSpeed = Math.sqrt(player.vx * player.vx + player.vy * player.vy);
-            const clintSpeed = Math.max(playerSpeed * 0.9, 2); // Match player speed or minimum of 2
+            const clintSpeed = Math.max(playerSpeed * 0.8, 2); // Match player speed or minimum of 2
 
             if (dist > 0.1) {
                 // Soft follow using lerp - smoothly interpolate toward target
@@ -6165,6 +6478,13 @@
 
         // Game loop
         function gameLoop() {
+            // Skip game logic while on title screen
+            if (titleScreen.active) {
+                render();
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+
             // Update cooldown timer
             if (dialogue.cooldownTimer > 0) {
                 dialogue.cooldownTimer -= 1/60;
@@ -6200,6 +6520,9 @@
             // Always check for nearby NPCs (for name display)
             game.nearbyNpc = null;
             for (let npc of npcs) {
+                // Skip Momo if being carried
+                if (npc.name === 'Momo' && npc.isBeingCarried) continue;
+
                 const dx = player.x - npc.x;
                 const dy = player.y - npc.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);

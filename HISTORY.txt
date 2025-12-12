@@ -764,3 +764,91 @@ If Bim is following the player - then the work tool display will show the name o
  Same as every other NPC
 
 Any other questions?
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.57:
+
+[New Unique NPC]
+
+Search: NPC, Pond, 
+
+Name: Momo
+Location: (-584, -1624)
+Dialogue: Generate placeholders
+Personality: Whiny, upset
+Description: Momo asks the player (yes or no) if he will carry them to a place that is wet. If the player selects yes, Momo becomes carried (like an item or coin). Momo weighs 20 coins. He can also be dropped and will ask once more to be carried again. Momo will change dialogue if the player places him in a pond. Momo will be happy and fill the players inventory with coins.
+
+1. The Pond/Wet Place:
+  - Should Momo work with the existing puddles in the game, or do you want a new 
+  dedicated pond created? The existing puddles in the game.
+
+  2. The Reward ("fills inventory with coins"):
+  - How many coins exactly? Fill to current carry capacity? A fixed number (e.g.,
+  50, 100)?
+  - Should these coins have any special weight or properties?
+Normal coins filled to the players current carry capacity.
+
+  3. Momo's Appearance:
+  - What radius/size should Momo be? (NPCs typically range from 12-35 radius)
+  - Since it follows black/white aesthetic, should Momo be a black circle with 
+  white outline like other NPCs?
+
+Same as all other NPCs, black circle with a white outline. 12 radius.
+
+  4. Carrying Mechanics:
+  - When carried, should Momo appear like other items (stacked on player), or have
+   a unique visual (e.g., slightly offset, different position)?
+  - Since Momo weighs 20, should players be prevented from picking up Momo if
+  their remaining capacity is less than 20?
+
+Same, stacked with other items. Block him from being deposited at the starting post like a package. He only takes up 1 inventory, the weight is 20, similar to a Diamond.
+
+  5. After Quest Completion:
+  - Does Momo stay in the pond permanently, disappear, or respawn at the original
+  location?
+  - Is this a one-time reward, or can the player repeat it (e.g., after a
+  reset/reload)?
+
+He stays in the pond forever.
+This is a one time reward.
+
+  6. Dialogue States:
+  - Initial approach: Whiny dialogue asking to be carried
+  - Being carried: Any dialogue while being held?
+  - Dropped (not in pond): Ask to be carried again
+  - Placed in pond: Happy dialogue + reward
+  - After reward: Does Momo still have dialogue if approached in pond?
+
+No dialogue while being held. Momo still has dialogue after, still happy about being in the pond.
+
+
+__
+
+Continue with a new version. Remember: Maintain the scope of the prompts - Ask many questions to fill in the blanks. We're now on v0.58:
+
+Let's add a title/start screen. It will show up every time the player loads the game, including the first time.
+
+Visual: Keep it minimal black and white, centered, same style and font as the UI elements.
+Elements (In this order, top to bottom):
+Title: The Chain Game
+Version: Show current version under title, formatted as v0.00
+Arrow key initiation: The game will start after the player presses all the arrow keys once, up, down, left, right, in any order. There should be an indicator to show whether each key has been pressed yet. Once all the keys have been pressed, start the game instantly.
+Credit: Created by Kevin Barrios (2025) (Bottom of the screen)
+
+ 1. Arrow Key Indicators:
+    - Black Boxes with arrow symbols that fill in white when pressed
+
+  2. Layout & Sizing:
+  - No instruction text
+  - The indicators should be arranged in a cross pattern (like arrow key layout)
+
+  3. Visual Feedback:
+  - Instant cut to gameplay
+  - Play either confirmation-ding_00.wav, confirmation-ding_01.wav, confirmation-ding_03.wav at random.
+
+  4. Background:
+  - Black background with white text
+
+  5. Version Number:
+  - Look for an existing version variable in the code

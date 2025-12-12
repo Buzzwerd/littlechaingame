@@ -1,4 +1,4 @@
-# NPCs - Chain Game v0.47
+# NPCs - Chain Game v0.57
 
 Complete guide to all NPCs in the game, their locations, and what they offer.
 
@@ -383,6 +383,34 @@ Offers the Courier job. Requires Work Tools from Tim.
 
 ---
 
+### Momo
+**Location:** (-584, -1624) - Northwest
+**Type:** Carryable NPC / Diamond Giver
+
+Momo is a unique NPC who asks to be carried to water. Unlike other NPCs, Momo can be picked up and carried as an item.
+
+**Mechanic:**
+1. Talk to Momo and accept (Up for yes)
+2. Momo becomes a carried item (weighs 20, takes 1 inventory slot)
+3. Find a puddle and drop Momo there (Left+Right to drop)
+4. Talk to Momo in the puddle to receive your reward
+
+| Offers | Cost | Effect |
+|--------|------|--------|
+| White Diamond | Carry to puddle | Worth 100 coins, weighs 100 |
+
+**Personality:** Whiny and upset until placed in water, then happy forever.
+
+**Notes:**
+- Momo weighs 20 (like a diamond) but only takes 1 inventory slot
+- Cannot be deposited at the post (like packages)
+- If dropped outside a puddle, Momo asks to be carried again
+- After reward, Momo stays in the puddle permanently
+
+**Choice Required:** Up for yes, Down for no
+
+---
+
 ## NPC Quick Reference Map
 
 ```
@@ -394,8 +422,8 @@ Offers the Courier job. Requires Work Tools from Tim.
          Don        Wheaton      Brot's Post
       (-3800,-3400) (-2000,-2500) (2400,-2600)
                        |
-       Quincy                      Hank
-     (-2599,-2129)               (700,-850)
+       Quincy         Momo          Hank
+     (-2599,-2129) (-584,-1624)  (700,-850)
            |                        |
          Jawn        George       Eddie    Klaus      Pin      Clint
       (-2000,-600)   (0,-1000)  (550,-200) (4500,-60)(3033,-49)(5000,400)
@@ -426,3 +454,4 @@ Offers the Courier job. Requires Work Tools from Tim.
 5. **Straum is a coin farm** - Visit repeatedly to get coins up to your capacity
 6. **Check both sellers** - Some abilities are sold by multiple NPCs at different prices
 7. **Help Brot for Golden Fleece** - Lead 50 animals to Brot's zone for a 100-coin reward
+8. **Carry Momo to water** - Drop Momo in a puddle and talk to them for a White Diamond
