@@ -1572,7 +1572,7 @@
                     ["All I ever find are coins...", "here, you can have my Fishing Rod...", "It's no use to me anymore..."]
                 ],
                 completedDialogue: [
-                    ["*stares wistfully at the water*", "I miss the old days...", ""]
+                    ["*stares wistfully into the distance*", "Just wait around in the water... you'll hook something eventually..."]
                 ],
                 hasChoice: false,
                 hasCompletedQuest: false,
@@ -5503,6 +5503,9 @@
                     // Check if deposits are allowed (not at 999 links and not after Freedom for coins/diamonds)
                     const canDepositCoinsAndDiamonds = chain.links < 999 && !game.hasFreedom;
 
+                    // Track total deposited this frame for combined floating text
+                    let totalDeposited = 0;
+
                     // Deposit coins (only if allowed)
                     if (player.carryingCoins.length > 0 && canDepositCoinsAndDiamonds) {
                         // Cap at 999 links
@@ -5517,23 +5520,10 @@
 
                         game.coinsDeposited += linksToAdd;
                         player.carryingCoins = [];
+                        totalDeposited += linksToAdd;
 
                         // Camera bounce effect
                         game.cameraShakeAmount = 0.15;
-
-                        // Add floating text
-                        floatingTexts.push({
-                            text: '+' + linksToAdd,
-                            x: post.x,
-                            y: post.y - post.radius - 10,
-                            vy: -1.5,
-                            alpha: 1.0,
-                            life: 1.0
-                        });
-
-                        // Play deposit sound
-                        audio.depositCoin.currentTime = 0;
-                        audio.depositCoin.play();
 
                         // Ensure there's always a reachable coin
                         ensureReachableCoin();
@@ -5562,19 +5552,7 @@
                                 chain.segments.push({ x: player.x, y: player.y });
                             }
                             game.coinsDeposited += linksToAdd;
-
-                            // Add floating text
-                            floatingTexts.push({
-                                text: '+' + linksToAdd,
-                                x: post.x,
-                                y: post.y - post.radius - 10,
-                                vy: -1.5,
-                                alpha: 1.0,
-                                life: 1.0
-                            });
-
-                            audio.depositCoin.currentTime = 0;
-                            audio.depositCoin.play();
+                            totalDeposited += linksToAdd;
 
                         } else if (item.type === 'ability') {
                             // Apply ability
@@ -5698,6 +5676,21 @@
 
                         // Save game AFTER item is removed from inventory
                         saveGame();
+                    }
+
+                    // Add combined floating text for all coins/diamonds deposited this frame
+                    if (totalDeposited > 0) {
+                        floatingTexts.push({
+                            text: '+' + totalDeposited,
+                            x: post.x,
+                            y: post.y - post.radius - 10,
+                            vy: -1.5,
+                            alpha: 1.0,
+                            life: 1.0
+                        });
+
+                        audio.depositCoin.currentTime = 0;
+                        audio.depositCoin.play();
                     }
                 }
             }
